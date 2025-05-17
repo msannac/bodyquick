@@ -35,35 +35,47 @@
     <!-- Contenido del Dashboard -->
     <div class="col-md-10">
       <div class="container mt-4">
-        <div class="row">
+        <div class="row dashboard-row-equal">
           <!-- Columna izquierda: gráficos apilados -->
           <div class="col-md-6">
-            <div class="mb-4">
+            <div class="mb-4 p-3 shadow-sm rounded bg-white border sector-dashboard">
               <h3><i class="fa-solid fa-list"></i> Total de Clientes por semana</h3>
               <canvas id="clientesChart"></canvas>
             </div>
-            <div>
+            <div class="p-3 shadow-sm rounded bg-white border sector-dashboard">
               <h3><i class="fa-solid fa-list"></i> Reservas por semana</h3>
               <canvas id="reservasChart"></canvas>
             </div>
           </div>
           <!-- Columna derecha: entrenadores destacados arriba, actividades activas debajo -->
-          <div class="col-md-6 d-flex flex-column justify-content-between" style="height: 100%">
-            <div class="mb-4">
+          <div class="col-md-6">
+            <div class="mb-4 p-3 shadow-sm rounded bg-white border sector-dashboard">
               <h3><i class="fa-solid fa-users"></i> Entrenadores Destacados</h3>
               <div class="row">
-                @foreach($entrenadores as $entrenador)
-                  <div class="col-12 mb-3 d-flex align-items-center">
-                    <img src="{{ $entrenador->profile_photo_path ? asset('storage/' . $entrenador->profile_photo_path) : asset('images/default-trainer.png') }}" alt="Foto de {{ $entrenador->nombre }}" class="rounded-circle mr-3" style="width:60px;height:60px;object-fit:cover;">
-                    <div>
+                {{-- Primeros 3 entrenadores en la primera fila --}}
+                @foreach($entrenadores->slice(0, 3) as $entrenador)
+                  <div class="col-4 mb-4 d-flex flex-column align-items-center">
+                    <img src="{{ $entrenador->profile_photo_path ? asset('storage/' . $entrenador->profile_photo_path) : asset('images/default-trainer.png') }}" alt="Foto de {{ $entrenador->nombre }}" class="rounded-circle mb-2" style="width:60px;height:60px;object-fit:cover;">
+                    <div class="text-center">
                       <strong>{{ $entrenador->nombre }}</strong><br>
-                      <span class="text-muted">{{ $entrenador->especialidad }}</span>
+                      <span class="text-muted" style="font-size:13px;">{{ $entrenador->especialidad }}</span>
+                    </div>
+                  </div>
+                @endforeach
+                {{-- Siguientes 3 entrenadores en la segunda fila --}}
+                @foreach($entrenadores->slice(3, 3) as $entrenador)
+                  <div class="col-4 mb-4 d-flex flex-column align-items-center">
+                    <img src="{{ $entrenador->profile_photo_path ? asset('storage/' . $entrenador->profile_photo_path) : asset('images/default-trainer.png') }}" alt="Foto de {{ $entrenador->nombre }}" class="rounded-circle mb-2" style="width:60px;height:60px;object-fit:cover;">
+                    <div class="text-center">
+                      <strong>{{ $entrenador->nombre }}</strong><br>
+                      <span class="text-muted" style="font-size:13px;">{{ $entrenador->especialidad }}</span>
                     </div>
                   </div>
                 @endforeach
               </div>
             </div>
-            <div class="mt-auto" style="margin-top: 48px;">
+            <div style="height:40px;"></div> <!-- Espacio extra entre sectores -->
+            <div class="p-3 shadow-sm rounded bg-white border sector-dashboard" style="height: 50%">
               <h3><i class="fa-solid fa-list"></i> Actividades Activas</h3>
               <ul>
                 @foreach($actividadesActivas as $actividad)
@@ -154,3 +166,51 @@
   });
 </script>
 @endpush
+
+<style>
+  .sector-dashboard {
+    min-height: 260px;
+    height: auto;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .dashboard-row-equal > [class^='col-'] > .sector-dashboard {
+    min-height: 260px;
+    height: auto;
+  }
+  @media (min-width: 768px) {
+    .dashboard-row-equal {
+      display: flex;
+    }
+    .dashboard-row-equal > .col-md-6 {
+      display: flex;
+      flex-direction: column;
+      justify-content: stretch;
+    }
+    .dashboard-row-equal > .col-md-6 > .sector-dashboard {
+      flex: 1 1 0;
+      min-height: 320px;
+      height: 100%;
+      margin-bottom: 32px;
+    }
+    .dashboard-row-equal > .col-md-6 > .sector-dashboard:last-child {
+      margin-bottom: 0;
+    }
+  }
+  @media (max-width: 767.98px) {
+    .dashboard-row-equal {
+      display: block;
+    }
+    .dashboard-row-equal > .col-md-6 {
+      display: block;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+    .sector-dashboard {
+      min-height: 180px;
+      margin-bottom: 20px;
+    }
+  }
+</style>

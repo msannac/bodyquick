@@ -94,20 +94,19 @@
             <table class="table table-bordered table-striped">
               <thead class="thead-dark">
                 <tr>
-                  <th class="fecha-col">Fecha</th>
-                  <th class="hueco-col">Hueco</th>
-                  <th>Aforo</th>
-                  <th>Hora Inicio</th>
-                  <th>Duración</th>
-                  <th>Frecuencia</th>
-                  <th>Actividad</th>
-                  <th>Cliente</th>
+                  <th class="fecha-col sortable" data-col="0">Fecha <span class="sort-icon"></span></th>
+                  <th class="hueco-col sortable" data-col="1">Hueco <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="2">Aforo <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="3">Hora Inicio <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="4">Duración <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="5">Frecuencia <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="6">Actividad <span class="sort-icon"></span></th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @foreach($citas as $cita)
-                  <tr>
+                @foreach($citas as $loopIndex => $cita)
+                  <tr data-index="{{ $loopIndex }}">
                     <td class="fecha-col">{{ $cita->fecha }}</td>
                     <td class="hueco-col">{{ $cita->hueco }}</td>
                     <td>{{ $cita->aforo }}</td>
@@ -115,7 +114,6 @@
                     <td>{{ $cita->duracion }}</td>
                     <td>{{ $cita->frecuencia }}</td>
                     <td>{{ $cita->actividad->nombre ?? 'N/A' }}</td>
-                    <td>{{ $cita->cliente->name ?? 'N/A' }}</td>
                     <td>
                       <div class="btn-group-acciones">
                         <!-- Botón Editar: se abre el modal vía AJAX -->
@@ -225,3 +223,104 @@
     .table-responsive { overflow-x: auto; }
   }
 </style>
+
+@push('scripts')
+<!-- Se incluye Chart.js solamente para esta vista -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Inicializar datepicker para el filtro de fecha fuera de modales
+  $(function(){
+    $('#fecha').datepicker({
+      format: 'yyyy-mm-dd',
+      autoclose: true,
+      todayHighlight: true,
+      language: 'es',
+      orientation: 'bottom',
+      templates: {
+        leftArrow: '<i class="fa fa-chevron-left"></i>',
+        rightArrow: '<i class="fa fa-chevron-right"></i>'
+      }
+    });
+    // Al hacer clic en el icono, abrir el datepicker
+    $('#calendar-icon').on('click', function(){
+      $('#fecha').datepicker('show');
+    });
+
+    // Envío automático del formulario de filtros al cambiar cualquier campo excepto el input de cliente
+    $('#filtrosForm input:not(#cliente), #filtrosForm select').on('change', function() {
+      $('#filtrosForm').submit();
+    });
+
+    // Filtrado AJAX para el input de cliente
+    $('#cliente').on('keyup', function(){
+      var valor = $(this).val();
+      if(valor.length >= 3 || valor.length === 0){
+        $.ajax({
+          url: $('#filtrosForm').attr('action'),
+          method: 'GET',
+          data: $('#filtrosForm').serialize(),
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          success: function(data){
+            // Espera que el backend devuelva solo el <tbody>
+            $('table tbody').html(data);
+          }
+        });
+      }
+    });
+  });
+
+  // Ordenación de columnas en la tabla de citas
+  $(document).ready(function(){
+    var sortState = {};
+    var originalRows = [];
+    var $tbody = $('table tbody');
+    // Guardar el orden original
+    $tbody.find('tr').each(function(){
+      originalRows.push($(this));
+    });
+
+    function resetSortIcons() {
+      $('.sort-icon').text('');
+    }
+
+    $('.sortable').css('cursor','pointer').on('click', function(){
+      var col = $(this).data('col');
+      var rows = $tbody.find('tr').toArray();
+      var state = sortState[col] || 'none';
+      // Alternar estado: none -> asc -> desc -> none
+      if(state === 'none') state = 'asc';
+      else if(state === 'asc') state = 'desc';
+      else state = 'none';
+      sortState = {}; sortState[col] = state;
+      resetSortIcons();
+      if(state === 'asc') $(this).find('.sort-icon').text('▲');
+      else if(state === 'desc') $(this).find('.sort-icon').text('▼');
+      // Ordenar
+      if(state === 'none') {
+        // Restaurar orden original
+        $tbody.html('');
+        originalRows.forEach(function($tr){ $tbody.append($tr); });
+      } else {
+        rows.sort(function(a, b){
+          var aText = $(a).children().eq(col).text().trim();
+          var bText = $(b).children().eq(col).text().trim();
+          // Si es número, comparar como número
+          var aNum = parseFloat(aText.replace(',', '.'));
+          var bNum = parseFloat(bText.replace(',', '.'));
+          if(!isNaN(aNum) && !isNaN(bNum)) {
+            return state === 'asc' ? aNum - bNum : bNum - aNum;
+          }
+          // Si es fecha (YYYY-MM-DD)
+          if(/^\d{4}-\d{2}-\d{2}$/.test(aText) && /^\d{4}-\d{2}-\d{2}$/.test(bText)) {
+            return state === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+          }
+          // Comparar como texto
+          return state === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+        });
+        $tbody.html('');
+        rows.forEach(function(tr){ $tbody.append(tr); });
+      }
+    });
+  });
+</script>
+@endpush

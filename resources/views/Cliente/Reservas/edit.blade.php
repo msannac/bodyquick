@@ -1,65 +1,121 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Editar Reserva</title>
-  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-  <!-- Bootstrap Datepicker -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
-</head>
-<body>
-  <div class="container mt-5">
-    <div class="form-wrapper">
-      <div class="page-title">
-        <i class="fa-regular fa-calendar-days"></i>
-        <span>Editar Reserva</span>
+<div class="form-wrapper actividad-modal-wrapper">
+  <div class="page-title">
+    <i class="fa-regular fa-calendar-days icono-label"></i>
+    <span>Editar Reserva</span>
+  </div>
+  <form action="{{ route('cliente.reservas.update', $reserva) }}" method="POST">
+    @csrf
+    @method('PUT')
+    <div class="form-grid-1col">
+      <div class="form-group">
+        <label for="actividad" class="nowrap-label"><i class="fas fa-dumbbell icono-label"></i> Actividad</label>
+        <select name="actividad" id="actividad" class="form-control">
+          <option value="">Seleccione una actividad</option>
+          @foreach($actividades as $actividad)
+            <option value="{{ $actividad->id }}" {{ $reserva->cita->actividad_id == $actividad->id ? 'selected' : '' }}>{{ $actividad->nombre }}</option>
+          @endforeach
+        </select>
       </div>
-      <form action="{{ route('cliente.reservas.update', $reserva) }}" method="POST">
-        @csrf
-        @method('PUT')
-        <!-- Seleccionar actividad -->
-        <div class="form-group">
-          <label for="actividad">Actividad</label>
-          <select name="actividad" id="actividad" class="form-control">
-            <option value="">Seleccione una actividad</option>
-            @foreach($actividades as $actividad)
-              <option value="{{ $actividad->id }}" {{ $reserva->cita->actividad_id == $actividad->id ? 'selected' : '' }}>
-                {{ $actividad->nombre }}
-              </option>
-            @endforeach
-          </select>
-        </div>
-        <!-- Seleccionar día -->
-        <div class="form-group">
-          <label for="fecha">Selecciona el día</label>
-          <div class="input-group date" id="datepicker-container">
-            <input type="text" name="fecha" id="fecha" class="form-control" value="{{ $reserva->cita->fecha }}" placeholder="Seleccione un día">
-            <div class="input-group-append">
-              <span class="input-group-text">
-                <i class="fa-regular fa-calendar-days"></i>
-              </span>
-            </div>
+      <div class="form-group">
+        <label for="fecha" class="nowrap-label"><i class="fa-regular fa-calendar-days icono-label"></i> Selecciona el día</label>
+        <div class="input-group date" id="datepicker-container" style="margin-bottom:0;">
+          <input type="text" name="fecha" id="fecha" class="form-control" value="{{ $reserva->cita->fecha }}" placeholder="Seleccione un día" style="height:28px; padding:3px 6px; font-size:0.97rem;" autocomplete="off">
+          <div class="input-group-append">
+            <span class="input-group-text" style="padding:2px 8px; height:28px;">
+              <i class="fa-regular fa-calendar-days"></i>
+            </span>
           </div>
         </div>
-        <!-- Seleccionar hueco -->
-        <div class="form-group">
-          <label for="hueco">Selecciona el hueco</label>
-          <select name="cita_id" id="hueco" class="form-control">
-            <option value="">Seleccione un hueco</option>
-            <option value="{{ $reserva->cita->id }}" selected>{{ $reserva->cita->hueco }}</option>
-          </select>
-        </div>
-        <!-- Botón -->
-        <div class="d-flex">
-          <button type="submit" class="btn btn-success">
-            <i class="fas fa-check"></i> Guardar Cambios
-          </button>
-        </div>
-      </form>
+      </div>
+      <div class="form-group">
+        <label for="hueco" class="nowrap-label"><i class="fas fa-clock icono-label"></i> Selecciona el hueco</label>
+        <select name="cita_id" id="hueco" class="form-control">
+          <option value="">Seleccione un hueco</option>
+          <option value="{{ $reserva->cita->id }}" selected>{{ $reserva->cita->hueco }}</option>
+        </select>
+      </div>
     </div>
-  </div>
-</body>
-</html>
+    <div class="form-group text-right mt-1">
+      <button type="submit" class="btn btn-success btn-accion-modal">
+        <i class="fas fa-check"></i> Guardar Cambios
+      </button>
+    </div>
+  </form>
+</div>
+<style>
+  .actividad-modal-wrapper {
+    background: rgb(236, 236, 236);
+    border-radius: 12px;
+    box-shadow: none;
+    max-width: 800px;
+    width: 100%;
+    min-width: 0;
+    margin: 0 auto;
+    box-sizing: border-box;
+    padding: 32px 32px 32px 32px;
+  }
+  .form-grid-1col {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    justify-items: center;
+  }
+  .form-group {
+    margin-bottom: 12px;
+    width: 100%;
+    max-width: 520px;
+    min-width: 220px;
+  }
+  @media (max-width: 991.98px) {
+    .actividad-modal-wrapper {
+      max-width: 98vw;
+    }
+    .form-grid-1col {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+  }
+  @media (max-width: 600px) {
+    .actividad-modal-wrapper {
+      padding: 8px 4px 8px 4px;
+    }
+  }
+  .page-title {
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+  .icono-label {
+    color: #27ae60;
+    margin-right: 3px;
+  }
+  .btn-accion-modal {
+    border-radius: 8px;
+    min-width: 100px;
+    padding-left: 0.7rem;
+    padding-right: 0.7rem;
+    font-size: 0.98rem;
+  }
+  .form-group label, .nowrap-label {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.97rem;
+    margin-bottom: 4px;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+    font-size: 0.97rem;
+    padding: 8px 10px;
+    height: 36px;
+    max-width: 100%;
+  }
+</style>

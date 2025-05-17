@@ -41,7 +41,7 @@
           @auth
             <span class="mr-3">{{ auth()->user()->name }}</span>
             <!-- Enlace a edición de perfil -->
-            <a href="#" class="btn abrirModal" data-url="{{ route('cliente.perfil.editar') }}">
+            <a href="#" class="btn abrirModal" data-url="{{ auth()->user()->is_admin ? route('admin.perfil.editar') : route('cliente.perfil.editar') }}">
               <img src="{{ asset(auth()->user()->profile_photo_path ? 'storage/' . auth()->user()->profile_photo_path : 'images/default-user.png') }}" 
                    alt="Foto de Perfil" 
                    style="width:40px; height:40px; border-radius:50%; object-fit:cover;" 
@@ -126,7 +126,7 @@
 
     <!-- Modal Global para Crear/Editar (vía AJAX) -->
     <div class="modal fade" id="modalAccion" tabindex="-1" role="dialog" aria-labelledby="modalAccionLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
+      <div class="modal-dialog modal-xl" role="document" style="max-width:800px; width: 100%;">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="modalAccionLabel">Acción</h5>
@@ -211,6 +211,43 @@
             $('#modalAccion .modal-body').html(data);
             $('#modalAccion').modal('show');
           });
+        });
+
+        // SUBMIT AJAX para formularios de perfil admin (y otros que lo requieran)
+        $(document).on('submit', 'form[action*="perfil/actualizar"]', function(e) {
+          var form = this;
+          // Solo AJAX si el formulario está en el modal
+          if ($(form).closest('#modalAccion').length > 0) {
+            e.preventDefault();
+            var formData = new FormData(form);
+            var action = $(form).attr('action');
+            var method = $(form).attr('method') || 'POST';
+            $.ajax({
+              url: action,
+              type: method,
+              data: formData,
+              processData: false,
+              contentType: false,
+              headers: { 'X-Requested-With': 'XMLHttpRequest' },
+              success: function(resp) {
+                if (resp.success) {
+                  $('#modalAccion').modal('hide');
+                  // Opcional: recargar la página o solo la foto de perfil
+                  location.reload();
+                } else if (resp.error) {
+                  alert(resp.error);
+                }
+              },
+              error: function(xhr) {
+                // Si hay errores de validación, recargar el modal con el HTML devuelto
+                if (xhr.status === 422 && xhr.responseText) {
+                  $('#modalAccion .modal-body').html(xhr.responseText);
+                } else {
+                  alert('Error al actualizar el perfil.');
+                }
+              }
+            });
+          }
         });
 
         $(document).on('click', '.btn-custom-eliminar', function(e) {
@@ -351,5 +388,174 @@
     </script>
     @stack('scripts')
     @livewireScripts
+
+    <!-- Gemini Chatbot Flotante -->
+    <button id="chatbot-fab" type="button">
+      <i class="fas fa-robot"></i>
+    </button>
+    <div id="chatbot-window">
+      <div id="chatbot-header">
+        <span>Gemini Chat</span>
+        <button id="chatbot-close" type="button">&times;</button>
+      </div>
+      <div id="chatbot-messages"></div>
+      <form id="chatbot-form" autocomplete="off">
+        <input type="text" id="chatbot-message" name="message" placeholder="Escribe tu mensaje..." required autocomplete="off">
+        <button type="submit"><i class="fas fa-paper-plane"></i></button>
+      </form>
+    </div>
+    <style>
+    #chatbot-fab {
+      position: fixed;
+      bottom: 24px;
+      right: 90px; /* Separado del borde derecho para no tapar otros botones flotantes */
+      z-index: 9999;
+      background: #27ae60;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 56px;
+      height: 56px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    #chatbot-fab:hover {
+      background: #219150;
+    }
+    #chatbot-window {
+      position: fixed;
+      bottom: 90px;
+      right: 90px;
+      width: 340px;
+      max-width: 98vw;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      z-index: 10000;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #chatbot-header {
+      background: #27ae60;
+      color: #fff;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 600;
+    }
+    #chatbot-header button {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+    #chatbot-messages {
+      padding: 12px;
+      height: 260px;
+      max-height: 260px;
+      overflow-y: auto;
+      background: #f7f7f7;
+      font-size: 0.98rem;
+    }
+    #chatbot-messages .msg-user {
+      text-align: right;
+      margin-bottom: 6px;
+      color: #333;
+    }
+    #chatbot-messages .msg-bot {
+      text-align: left;
+      margin-bottom: 6px;
+      color: #27ae60;
+    }
+    #chatbot-form {
+      display: flex;
+      border-top: 1px solid #eee;
+      background: #fff;
+    }
+    #chatbot-form input[type="text"] {
+      flex: 1;
+      border: none;
+      padding: 10px;
+      font-size: 1rem;
+      outline: none;
+    }
+    #chatbot-form button {
+      background: #27ae60;
+      color: #fff;
+      border: none;
+      padding: 0 18px;
+      font-size: 1.2rem;
+      border-radius: 0 0 14px 0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #chatbot-form button:hover {
+      background: #219150;
+    }
+    @media (max-width: 600px) {
+      #chatbot-window {
+        right: 80px;
+        width: 98vw;
+        min-width: 0;
+        bottom: 80px;
+      }
+      #chatbot-fab {
+        right: 80px;
+        bottom: 16px;
+      }
+    }
+    </style>
+    <script>
+    (function(){
+      const fab = document.getElementById('chatbot-fab');
+      const windowEl = document.getElementById('chatbot-window');
+      const closeBtn = document.getElementById('chatbot-close');
+      const form = document.getElementById('chatbot-form');
+      const input = document.getElementById('chatbot-message');
+      const messages = document.getElementById('chatbot-messages');
+
+      fab.addEventListener('click', function() {
+        windowEl.style.display = 'flex';
+        input.focus();
+      });
+      closeBtn.addEventListener('click', function() {
+        windowEl.style.display = 'none';
+        messages.innerHTML = '';
+        input.value = '';
+      });
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const msg = input.value.trim();
+        if (!msg) return;
+        messages.innerHTML += `<div class='msg-user'>${msg}</div>`;
+        input.value = '';
+        messages.scrollTop = messages.scrollHeight;
+        fetch("{{ route('chatbot.ask') }}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify({ message: msg })
+        })
+        .then(res => res.json())
+        .then(data => {
+          messages.innerHTML += `<div class='msg-bot'>${data.answer}</div>`;
+          messages.scrollTop = messages.scrollHeight;
+        })
+        .catch(() => {
+          messages.innerHTML += `<div class='msg-bot'>Error al conectar con Gemini</div>`;
+          messages.scrollTop = messages.scrollHeight;
+        });
+      });
+    })();
+    </script>
   </body>
 </html>

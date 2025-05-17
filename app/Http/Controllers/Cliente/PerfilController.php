@@ -19,28 +19,40 @@ class PerfilController extends Controller
     public function update(Request $request)
     {
         $user = Auth::user();
-        
-        // Aquí suponemos que el correo no puede modificarse por el cliente
+
+        // Validar todos los campos del formulario de perfil de cliente
         $data = $request->validate([
             'name'          => 'required|string|max:255',
+            'apellidos'     => 'nullable|string|max:255',
+            'dni'           => 'nullable|string|max:20',
+            'telefono'      => 'nullable|string|max:30',
             // No se permite modificar el email
             'password'      => 'nullable|string|min:8|confirmed',
             'profile_photo' => 'nullable|image|max:2048',
         ]);
-        
+
         $user->name = $data['name'];
-        
+        $user->apellidos = $data['apellidos'] ?? $user->apellidos;
+        $user->dni = $data['dni'] ?? $user->dni;
+        $user->telefono = $data['telefono'] ?? $user->telefono;
+
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);
         }
-        
+
         if ($request->hasFile('profile_photo')) {
             $path = $request->file('profile_photo')->store('images/perfil', 'public');
             $user->profile_photo_path = $path;
         }
-        
+
         $user->save();
-        
+
+        // Si es AJAX, responder con JSON para que el modal se cierre correctamente
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Perfil actualizado correctamente.']);
+        }
+
+        // Si no es AJAX, redirigir normalmente
         return redirect()->route('cliente.perfil.editar')->with('status', 'Perfil actualizado correctamente.');
     }
 }

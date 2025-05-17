@@ -51,11 +51,13 @@
             @foreach($entrenadores as $entrenador)
               <div class="col-12 col-md-4 mb-4">
                 <div class="card small-card">
-                  @if($entrenador->profile_photo_path)
-                    <img src="{{ asset('storage/' . $entrenador->profile_photo_path) }}" class="card-img-top" alt="{{ $entrenador->nombre }}" style="height:200px; object-fit:contain; background-color:#fff;">
-                  @else
-                    <img src="{{ asset('images/default-user.png') }}" class="card-img-top" alt="{{ $entrenador->nombre }}" style="height:200px; object-fit:contain; background-color:#fff;">
-                  @endif
+                  <div class="circle-img-wrapper">
+                    @if($entrenador->profile_photo_path)
+                      <img src="{{ asset('storage/' . $entrenador->profile_photo_path) }}" class="card-img-top" alt="{{ $entrenador->nombre }}">
+                    @else
+                      <img src="{{ asset('images/default-user.png') }}" class="card-img-top" alt="{{ $entrenador->nombre }}">
+                    @endif
+                  </div>
                   <div class="card-body text-center p-2">
                     <h6 class="card-title mb-1">{{ $entrenador->nombre }} {{ $entrenador->apellidos }}</h6>
                     <p class="card-text mb-2">{{ ucfirst($entrenador->especialidad) }}</p>
@@ -140,6 +142,10 @@
     border: none;
     border-radius: 15px;
     overflow: hidden;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    min-height: 270px;
+    background: rgb(236, 236, 236);
   }
   .card-title {
     font-size: 1rem;
@@ -150,10 +156,31 @@
     font-size: 0.9rem;
   }
   .card-img-top {
-    width: 100%;
-    height: 200px;
-    object-fit: contain;
+    width: 94px;
+    height: 94px;
+    object-fit: cover;
     background-color: #fff;
+    border-radius: 50%;
+    margin: 0;
+    display: block;
+    border: none;
+    box-shadow: none;
+    position: static;
+  }
+  .circle-img-wrapper {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #fff;
+    margin: 12px auto 8px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 2px solid #e0e0e0;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
   }
   
   /* Estilos para los botones de editar y eliminar */

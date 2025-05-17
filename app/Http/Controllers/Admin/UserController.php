@@ -75,6 +75,10 @@ class UserController extends Controller
         } else {
             $clientes = $query->get();
         }
+
+        if ($request->ajax()) {
+            return view('Admin.Clientes.partials.tbody', compact('clientes'))->render();
+        }
         return view('Admin.Clientes.index', compact('clientes'));
     }
 

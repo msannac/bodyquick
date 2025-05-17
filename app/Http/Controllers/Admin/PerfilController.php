@@ -9,10 +9,22 @@ use Illuminate\Support\Facades\Auth;
 
 class PerfilController extends Controller
 {
-    public function edit()
+    public function edit(Request $request)
     {
         $user = Auth::user();
-        return view('Admin.Perfil.edit', compact('user'));
+        // Si la petición es AJAX, devolver el formulario adecuado según el tipo de usuario
+        if ($request->ajax()) {
+            if ($user->is_admin) {
+                return view('Admin.Perfil.edit', compact('user'))->render();
+            } else {
+                return view('Cliente.Perfil.edit', compact('user'))->render();
+            }
+        }
+        if ($user->is_admin) {
+            return view('Admin.Perfil.edit', compact('user'));
+        } else {
+            return view('Cliente.Perfil.edit', compact('user'));
+        }
     }
     
     public function update(Request $request)
@@ -20,6 +32,9 @@ class PerfilController extends Controller
         $user = Auth::user();
 
         if (!$user) {
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Debes iniciar sesión para actualizar tu perfil.'], 401);
+            }
             return redirect()->route('login')->with('error', 'Debes iniciar sesión para actualizar tu perfil.');
         }
 
@@ -53,6 +68,14 @@ class PerfilController extends Controller
         }
         
         $user->save();
+        
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Perfil actualizado correctamente.',
+                // Opcional: podrías devolver el HTML actualizado del perfil o una instrucción para recargar
+            ]);
+        }
         
         return redirect()->route('admin.perfil.editar')->with('status', 'Perfil actualizado correctamente.');
     }

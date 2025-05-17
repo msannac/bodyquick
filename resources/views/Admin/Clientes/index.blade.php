@@ -57,25 +57,6 @@
               </div>
             </div>
           </form>
-          <script>
-            $(document).ready(function(){
-              $('#cliente').on('keyup', function(){
-                var valor = $(this).val();
-                if(valor.length >= 3 || valor.length === 0){
-                  $.ajax({
-                    url: $('#buscadorClientesForm').attr('action'),
-                    method: 'GET',
-                    data: { cliente: valor },
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    success: function(data){
-                      // Espera que el backend devuelva solo el <tbody>
-                      $('table tbody').html(data);
-                    }
-                  });
-                }
-              });
-            });
-          </script>
           @if(session('status'))
             <div class="alert alert-success">{{ session('status') }}</div>
           @endif
@@ -84,17 +65,17 @@
             <table class="table table-bordered table-striped">
               <thead class="thead-dark">
                 <tr>
-                  <th>Nombre</th>
-                  <th>Apellidos</th>
-                  <th>Email</th>
-                  <th>DNI</th>
-                  <th>Teléfono</th>
+                  <th class="sortable" data-col="0">Nombre <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="1">Apellidos <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="2">Email <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="3">DNI <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="4">Teléfono <span class="sort-icon"></span></th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @foreach($clientes as $cliente)
-                <tr>
+                @foreach($clientes as $loopIndex => $cliente)
+                <tr data-index="{{ $loopIndex }}">
                     <td>{{ $cliente->name }}</td>
                     <td>{{ $cliente->apellidos }}</td>
                     <td>{{ $cliente->email }}</td>
@@ -125,6 +106,71 @@
     </div>
   </div>
 @endsection
+
+@push('scripts')
+<script>
+  $(document).ready(function(){
+    $('#cliente').on('keyup', function(){
+      var valor = $(this).val();
+      if(valor.length >= 3 || valor.length === 0){
+        $.ajax({
+          url: $('#buscadorClientesForm').attr('action'),
+          method: 'GET',
+          data: { cliente: valor },
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          success: function(data){
+            // Espera que el backend devuelva solo el <tbody>
+            $('table tbody').html(data);
+          }
+        });
+      }
+    });
+
+    // Ordenación de columnas en la tabla de clientes
+    var sortState = {};
+    var originalRows = [];
+    var $tbody = $('table tbody');
+    $tbody.find('tr').each(function(){
+      originalRows.push($(this));
+    });
+    function resetSortIcons() {
+      $('.sort-icon').text('');
+    }
+    $('.sortable').css('cursor','pointer').on('click', function(){
+      var col = $(this).data('col');
+      var rows = $tbody.find('tr').toArray();
+      var state = sortState[col] || 'none';
+      if(state === 'none') state = 'asc';
+      else if(state === 'asc') state = 'desc';
+      else state = 'none';
+      sortState = {}; sortState[col] = state;
+      resetSortIcons();
+      if(state === 'asc') $(this).find('.sort-icon').text('▲');
+      else if(state === 'desc') $(this).find('.sort-icon').text('▼');
+      if(state === 'none') {
+        $tbody.html('');
+        originalRows.forEach(function($tr){ $tbody.append($tr); });
+      } else {
+        rows.sort(function(a, b){
+          var aText = $(a).children().eq(col).text().trim();
+          var bText = $(b).children().eq(col).text().trim();
+          var aNum = parseFloat(aText.replace(',', '.'));
+          var bNum = parseFloat(bText.replace(',', '.'));
+          if(!isNaN(aNum) && !isNaN(bNum)) {
+            return state === 'asc' ? aNum - bNum : bNum - aNum;
+          }
+          if(/^\d{4}-\d{2}-\d{2}$/.test(aText) && /^\d{4}-\d{2}-\d{2}$/.test(bText)) {
+            return state === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+          }
+          return state === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+        });
+        $tbody.html('');
+        rows.forEach(function(tr){ $tbody.append(tr); });
+      }
+    });
+  });
+</script>
+@endpush
 
 <!-- Estilos personalizados para que el comportamiento de los botones sea igual al de Actividades -->
 <style>

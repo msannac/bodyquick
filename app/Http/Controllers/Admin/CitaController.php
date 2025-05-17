@@ -35,7 +35,6 @@ class CitaController extends Controller
         // Filtrar por cliente utilizando la relación reserva
         if ($request->filled('cliente_id')) {
             $consulta->whereHas('reserva', function (Builder $query) use ($cliente_id) {
-                // Cambiar 'cliente_id' por 'user_id' si este es el nombre real en la tabla reservas.
                 $query->where('user_id', $cliente_id);
             });
         }
@@ -50,9 +49,13 @@ class CitaController extends Controller
 
         $citas = $consulta->with(['actividad', 'reserva.cliente'])->paginate(15);
 
-        // Obtener la lista de clientes (usuarios que no son admin) y actividades para el filtro en la vista.
         $clientes = User::where('is_admin', false)->get();
         $actividades = Actividad::all();
+
+        // Si la petición es AJAX, devolver solo el <tbody> de la tabla
+        if ($request->ajax()) {
+            return view('Admin.Citas.partials.tbody', compact('citas'))->render();
+        }
 
         return view('Admin.Citas.index', compact('citas', 'fecha', 'actividad_id', 'cliente_id', 'clientes', 'actividades'));
     }

@@ -96,6 +96,13 @@ Route::middleware(['auth:sanctum', ClienteMiddleware::class])->group(function ()
          ->name('cliente.perfil.actualizar');
 });
 
+// Chatbot Gemini
+Route::post('/chatbot/ask', [App\Http\Controllers\ChatbotController::class, 'ask'])->name('chatbot.ask');
+
+Route::get('/chatbot', function () {
+    return view('chatbot');
+})->name('chatbot.demo');
+
 Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])
          ->name('admin.dashboard');

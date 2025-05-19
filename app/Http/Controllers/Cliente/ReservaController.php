@@ -8,6 +8,15 @@ use App\Models\Reserva;
 use App\Models\Actividad;
 use App\Models\Cita;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ReservaCreadaClienteMail;
+use App\Mail\ReservaCreadaAdminMail;
+use App\Mail\ReservaAnuladaClienteMail;
+use App\Mail\ReservaAnuladaAdminMail;
+use App\Mail\ReservaActualizadaClienteMail;
+use App\Mail\ReservaActualizadaAdminMail;
+use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 class ReservaController extends Controller
 {
@@ -34,7 +43,27 @@ class ReservaController extends Controller
             // Agrega otras reglas si es necesario
         ]);
         $data['user_id'] = Auth::id();
-        Reserva::create($data);
+
+        // Validar aforo antes de crear la reserva
+        $cita = Cita::find($data['cita_id']);
+        $num_reservas = Reserva::where('cita_id', $cita->id)->count();
+        if ($num_reservas >= $cita->aforo) {
+            return redirect()->back()->withErrors(['cita_id' => 'aforo completo'])->withInput();
+        }
+
+        $reserva = Reserva::create($data);
+        $actividad = $cita->actividad;
+        $cliente = Auth::user();
+
+        // Enviar email al cliente
+        Mail::to($cliente->email)->send(new ReservaCreadaClienteMail($reserva, $cita, $actividad));
+
+        // Enviar email al admin (pueden ser varios, aquí se envía al primero encontrado)
+        $admin = User::where('is_admin', true)->first();
+        if ($admin) {
+            Mail::to($admin->email)->send(new ReservaCreadaAdminMail($reserva, $cita, $actividad, $cliente));
+        }
+
         return redirect()->route('cliente.reservas.index')
                          ->with('status', 'Reserva creada correctamente');
     }
@@ -55,20 +84,49 @@ class ReservaController extends Controller
         if ($reserva->user_id !== Auth::id()) {
             abort(403);
         }
-        
+
+        // Comprobar si faltan al menos 24 horas para la cita
+        $cita = $reserva->cita;
+        $fechaHoraCita = \Carbon\Carbon::parse($cita->fecha . ' ' . $cita->hora_inicio);
+        if (now()->diffInHours($fechaHoraCita, false) < 24) {
+            return redirect()->route('cliente.reservas.index')
+                ->with('error', 'No puedes modificar una reserva con menos de 24 horas de antelación. Si tienes una urgencia, contacta con el centro.');
+        }
+
         $data = $request->validate([
             'actividad' => 'required|exists:actividades,id',
             'fecha'     => 'required|date',
             'cita_id'   => 'required|exists:citas,id',
         ]);
+
+        // Validar aforo antes de actualizar la reserva
+        $cita = Cita::find($data['cita_id']);
+        $num_reservas = Reserva::where('cita_id', $cita->id)
+            ->where('id', '!=', $reserva->id) // Excluir la reserva actual
+            ->count();
+        if ($num_reservas >= $cita->aforo) {
+            return redirect()->back()->withErrors(['cita_id' => 'aforo completo'])->withInput();
+        }
         
         // Actualizar la cita asociada a la reserva
         $reserva->cita->update([
             'actividad_id' => $data['actividad'],
             'fecha'        => $data['fecha'],
-            // En este ejemplo, se asume que el campo "hueco" se actualiza indirectamente 
-            // a través de "cita_id". Si se necesita actualizar otro campo, agrégalo aquí.
         ]);
+
+        // Obtener datos para el email
+        $actividad = $cita->actividad;
+        $cliente = Auth::user();
+        
+        // Enviar email al cliente (actualización)
+        Mail::to($cliente->email)->send(new ReservaActualizadaClienteMail($reserva, $cita, $actividad));
+
+        // Enviar email al admin (actualización)
+        $admin = User::where('is_admin', true)->first();
+        Log::info('Enviando email de actualización a admin', ['admin' => $admin ? $admin->email : null]);
+        if ($admin) {
+            Mail::to($admin->email)->send(new ReservaActualizadaAdminMail($reserva, $cita, $actividad, $cliente));
+        }
         
         return redirect()->route('cliente.reservas.index')
                          ->with('status', 'Reserva actualizada correctamente');
@@ -80,9 +138,32 @@ class ReservaController extends Controller
         if ($reserva->user_id !== Auth::id()) {
             abort(403);
         }
+
+        // Comprobar si faltan al menos 24 horas para la cita
+        $cita = $reserva->cita;
+        $fechaHoraCita = \Carbon\Carbon::parse($cita->fecha . ' ' . $cita->hora_inicio);
+        if (now()->diffInHours($fechaHoraCita, false) < 24) {
+            return redirect()->route('cliente.reservas.index')
+                ->with('error', 'No puedes anular una reserva con menos de 24 horas de antelación. Si tienes una urgencia, contacta con el centro.');
+        }
+
+        $actividad = $cita->actividad;
+        $cliente = Auth::user();
+
+        // Eliminar la reserva
         $reserva->delete();
+
+        // Enviar email al cliente (anulación)
+        Mail::to($cliente->email)->send(new ReservaAnuladaClienteMail($reserva, $cita, $actividad));
+
+        // Enviar email al admin (anulación)
+        $admin = User::where('is_admin', true)->first();
+        if ($admin) {
+            Mail::to($admin->email)->send(new ReservaAnuladaAdminMail($reserva, $cita, $actividad, $cliente));
+        }
+
         return redirect()->route('cliente.reservas.index')
-                         ->with('status', 'Reserva eliminada correctamente');
+            ->with('status', 'Reserva anulada correctamente');
     }
 
     public function diasDisponibles(Request $request)
@@ -112,17 +193,25 @@ class ReservaController extends Controller
         $actividad_id = $request->actividad_id;
         $fecha = $request->fecha;
 
-        // Validar que los parámetros requeridos estén presentes
         if (!$actividad_id || !$fecha) {
             return response()->json(['error' => 'Parámetros faltantes'], 400);
         }
 
-        // Filtrar huecos disponibles dentro del horario del gimnasio
+        // Obtener los huecos (citas) para la actividad y fecha
         $huecos = Cita::where('actividad_id', $actividad_id)
             ->where('fecha', $fecha)
-            ->get(['id', 'hora_inicio', 'duracion']);
+            ->get(['id', 'hora_inicio', 'duracion', 'aforo']);
 
-        // Verificar si hay huecos disponibles
+        if ($huecos->isEmpty()) {
+            return response()->json(['message' => 'No hay huecos disponibles para esta fecha'], 404);
+        }
+
+        // Filtrar solo los huecos que no han alcanzado el aforo máximo
+        $huecos = $huecos->filter(function ($hueco) {
+            $num_reservas = \App\Models\Reserva::where('cita_id', $hueco->id)->count();
+            return $num_reservas < $hueco->aforo;
+        })->values();
+
         if ($huecos->isEmpty()) {
             return response()->json(['message' => 'No hay huecos disponibles para esta fecha'], 404);
         }

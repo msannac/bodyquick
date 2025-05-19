@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -10,7 +10,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens;
 
@@ -21,7 +21,7 @@ class User extends Authenticatable
     use TwoFactorAuthenticatable;
 
     /**
-     * The attributes that are mass assignable.
+     * Los atributos que se pueden asignar masivamente.
      *
      * @var array<int, string>
      */
@@ -29,14 +29,14 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'is_admin', // Agregado para identificar administradores o clientes
-        'apellidos', // Nuevo campo
-        'dni', // Nuevo campo
-        'telefono', // Nuevo campo
+        'is_admin', 
+        'apellidos', 
+        'dni', 
+        'telefono', 
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Los atributos que deben estar ocultos para la serialización.
      *
      * @var array<int, string>
      */
@@ -48,7 +48,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * The accessors to append to the model's array form.
+     * Los accesores que se deben agregar a la forma de matriz del modelo.
      *
      * @var array<int, string>
      */
@@ -57,7 +57,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * Obtener los atributos que deben ser convertidos.
      *
      * @return array<string, string>
      */

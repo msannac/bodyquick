@@ -10,14 +10,28 @@ use App\Http\Controllers\Cliente\PerfilController as ClientePerfilController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\ClienteMiddleware;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return view('landing');
 });
 
-Route::get('/about', function () {
-    return view('about');
-})->name('about');
+// Rutas de verificación de email (Laravel)
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+    return redirect('/'); // Puedes cambiar la ruta de redirección si lo deseas
+})->middleware(['auth', 'signed'])->name('verification.verify');
+
+Route::post('/email/verification-notification', function (Request $request) {
+    $request->user()->sendEmailVerificationNotification();
+    return back()->with('message', '¡Enlace de verificación reenviado!');
+})->middleware(['auth', 'throttle:6,1'])->name('verification.send');
 
 // Grupo de rutas para usuarios autenticados y verificados
 Route::middleware([
@@ -44,7 +58,7 @@ Route::middleware([
              return view('Admin/createActividad');
          })->name('admin.actividades.create');
 
-         // Rutas para el CRUD de citas usando nombres en español
+         // Rutas para el CRUD de citas 
          Route::get('admin/citas', [CitaController::class, 'listar'])->name('admin.citas.listar');
          Route::get('admin/citas/crear', [CitaController::class, 'crear'])->name('admin.citas.crear');
          Route::post('admin/citas', [CitaController::class, 'almacenar'])->name('admin.citas.almacenar');
@@ -53,7 +67,7 @@ Route::middleware([
          Route::delete('admin/citas/{cita}', [CitaController::class, 'eliminar'])->name('admin.citas.eliminar');
          Route::get('admin/citas/huecos-disponibles', [CitaController::class, 'huecosDisponibles'])->name('admin.citas.huecosDisponibles');
 
-         // Rutas para el CRUD de actividades usando nombres en español
+         // Rutas para el CRUD de actividades 
          Route::get('admin/actividades', [ActividadController::class, 'listar'])->name('admin.actividades.listar');
          Route::get('admin/actividades/crear', [ActividadController::class, 'crear'])->name('admin.actividades.crear');
          Route::post('admin/actividades', [ActividadController::class, 'almacenar'])->name('admin.actividades.almacenar');
@@ -61,7 +75,7 @@ Route::middleware([
          Route::put('admin/actividades/{actividad}', [ActividadController::class, 'actualizar'])->name('admin.actividades.actualizar');
          Route::delete('admin/actividades/{actividad}', [ActividadController::class, 'eliminar'])->name('admin.actividades.eliminar');
 
-         // Rutas para el CRUD de clientes usando nombres en español
+         // Rutas para el CRUD de clientes 
          Route::get('admin/clientes', [App\Http\Controllers\Admin\UserController::class, 'listar'])->name('admin.clientes.listar');
          Route::get('admin/clientes/crear', [App\Http\Controllers\Admin\UserController::class, 'crear'])->name('admin.clientes.crear');
          Route::post('admin/clientes', [App\Http\Controllers\Admin\UserController::class, 'almacenar'])->name('admin.clientes.almacenar');

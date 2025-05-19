@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 
 class UserController extends Controller
 {
@@ -104,7 +105,7 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        User::create([
+        $user = User::create([
             'name'     => $datos['name'],
             'apellidos' => $datos['apellidos'] ?? null,
             'dni'      => $datos['dni'] ?? null,
@@ -114,7 +115,19 @@ class UserController extends Controller
             'is_admin' => false,
         ]);
 
-        return redirect()->route('admin.clientes.listar')->with('status', 'Cliente creado correctamente.');
+        // Enviar email de bienvenida con enlace de verificación
+        // Generar enlace de verificación manualmente
+        $verificationUrl = url()->temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(config('auth.verification.expire', 60)),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+        
+        Mail::to($user->email)->send(new \App\Mail\BienvenidaClienteMail($user, $datos['password'], $verificationUrl));
+
+        
+
+        return redirect()->route('admin.clientes.listar')->with('status', 'Cliente creado correctamente. Se ha enviado un email de bienvenida.');
     }
 
     /**

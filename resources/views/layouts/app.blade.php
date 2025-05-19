@@ -89,9 +89,6 @@
               Consigue resultados inigualables con solo 2 sesiones por semana (perder peso, grasa, tonificar, reducir dolores de espalda, reducir celulitis, mejorar rendimiento deportivo, etc.) 
               ¿Cuál es tu excusa?
             </p>
-            <p>
-              <a href="{{ route('about') }}" style="color: #fff;">Sobre nosotros</a>
-            </p>
           </div>
 
           <!-- Segunda columna: Imágenes pequeñas -->

@@ -55,6 +55,23 @@ class ReservaController extends Controller
         $actividad = $cita->actividad;
         $cliente = Auth::user();
 
+        // Crear evento en Google Calendar
+        try {
+            $startDateTime = \Carbon\Carbon::parse($cita->fecha . ' ' . $cita->hora_inicio, 'Europe/Madrid')->setTimezone('Europe/Madrid');
+            $endDateTime = (clone $startDateTime)->addMinutes($cita->duracion)->setTimezone('Europe/Madrid');
+            $event = \Spatie\GoogleCalendar\Event::create([
+                'name' => 'Reserva: ' . ($actividad->nombre ?? 'Actividad'),
+                'description' => 'Reserva realizada por ' . $cliente->name . ' (' . $cliente->email . ')',
+                'startDateTime' => $startDateTime,
+                'endDateTime' => $endDateTime,
+            ]);
+            // Guardar el ID del evento de Google Calendar en la reserva
+            $reserva->google_event_id = $event->id;
+            $reserva->save();
+        } catch (\Exception $e) {
+            Log::error('Error creando evento en Google Calendar: ' . $e->getMessage());
+        }
+
         // Enviar email al cliente
         Mail::to($cliente->email)->send(new ReservaCreadaClienteMail($reserva, $cita, $actividad));
 
@@ -117,7 +134,30 @@ class ReservaController extends Controller
         // Obtener datos para el email
         $actividad = $cita->actividad;
         $cliente = Auth::user();
-        
+
+        // --- Google Calendar: Actualizar evento usando el ID guardado ---
+        try {
+            // Eliminar el evento anterior si existe
+            if ($reserva->google_event_id) {
+                $event = \Spatie\GoogleCalendar\Event::find($reserva->google_event_id);
+                if ($event) $event->delete();
+            }
+            // Crear nuevo evento actualizado
+            $startDateTime = \Carbon\Carbon::parse($cita->fecha . ' ' . $cita->hora_inicio, 'Europe/Madrid')->setTimezone('Europe/Madrid');
+            $endDateTime = (clone $startDateTime)->addMinutes($cita->duracion)->setTimezone('Europe/Madrid');
+            $event = \Spatie\GoogleCalendar\Event::create([
+                'name' => 'Reserva: ' . ($actividad->nombre ?? 'Actividad'),
+                'description' => 'Reserva actualizada por ' . $cliente->name . ' (' . $cliente->email . ')',
+                'startDateTime' => $startDateTime,
+                'endDateTime' => $endDateTime,
+            ]);
+            $reserva->google_event_id = $event->id;
+            $reserva->save();
+        } catch (\Exception $e) {
+            Log::error('Error actualizando evento en Google Calendar: ' . $e->getMessage());
+        }
+        // --- Fin Google Calendar ---
+
         // Enviar email al cliente (actualización)
         Mail::to($cliente->email)->send(new ReservaActualizadaClienteMail($reserva, $cita, $actividad));
 
@@ -149,6 +189,17 @@ class ReservaController extends Controller
 
         $actividad = $cita->actividad;
         $cliente = Auth::user();
+
+        // --- Google Calendar: Eliminar evento usando el ID guardado ---
+        try {
+            if ($reserva->google_event_id) {
+                $event = \Spatie\GoogleCalendar\Event::find($reserva->google_event_id);
+                if ($event) $event->delete();
+            }
+        } catch (\Exception $e) {
+            Log::error('Error eliminando evento en Google Calendar: ' . $e->getMessage());
+        }
+        // --- Fin Google Calendar ---
 
         // Eliminar la reserva
         $reserva->delete();

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title','Panel de Control - Listado de Actividades')
+@section('title','Panel de Control - Listado de Reservas')
 
 @section('content')
   <!-- Contenedor principal -->
@@ -30,7 +30,6 @@
           <a href="{{ route('admin.entrenadores.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
             Listar Entrenadores
           </a>
-          </a>
           <a href="{{ route('admin.reservas.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
             Listar Reservas
           </a>
@@ -40,41 +39,43 @@
       <div class="col-12 col-md-10">
         <div class="container mt-4">
           <div class="d-flex align-items-center">
-            <h1 class="mb-0"><i class="fa-solid fa-list"></i> Listado de Actividades</h1>
+            <h1 class="mb-0"><i class="fa-solid fa-list"></i> Listado de Reservas</h1>
             <!-- Botón Crear -->
-            <a href="{{ route('admin.actividades.crear') }}" 
+            <a href="{{ route('admin.reservas.crear') }}" 
                class="btn btn-success ml-3 inline-button abrirModal" 
-               data-url="{{ route('admin.actividades.crear') }}">
+               data-url="{{ route('admin.reservas.crear') }}">
               <i class="fas fa-plus"></i>
             </a>
           </div>
-          @if(session('status'))
-            <div class="alert alert-success">{{ session('status') }}</div>
+          @if(session('success'))
+            <div class="alert alert-success mt-3">{{ session('success') }}</div>
           @endif
           <div class="table-responsive mt-4">
-            <table class="table table-bordered table-striped">
+            <table class="table table-bordered table-striped table-reservas-admin">
               <thead class="thead-dark">
                 <tr>
-                  <th>Nombre</th>
-                  <th>Descripción</th>
-                  <th>Activo</th>
+                  <th>Cliente</th>
+                  <th>Actividad</th>
+                  <th>Fecha</th>
+                  <th>Hora</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
-              <tbody>
-                @foreach($actividades as $actividad)
+              <tbody id="tablaReservasAdmin">
+                @forelse($reservas as $reserva)
                   <tr>
-                    <td>{{ $actividad->nombre }}</td>
-                    <td>{{ $actividad->descripcion }}</td>
-                    <td>{{ $actividad->activo ? 'Sí' : 'No' }}</td>
+                    <td>{{ $reserva->cliente->name ?? '-' }}</td>
+                    <td>{{ $reserva->cita->actividad->nombre ?? '-' }}</td>
+                    <td>{{ $reserva->cita->fecha ?? '-' }}</td>
+                    <td>{{ $reserva->cita->hora_inicio ?? '-' }}</td>
                     <td>
                       <div class="btn-group-acciones d-flex align-items-center" style="gap: 10px;">
-                        <a href="{{ route('admin.actividades.editar', $actividad) }}" 
+                        <a href="{{ route('admin.reservas.editar', $reserva) }}" 
                            class="btn-custom-editar abrirModal" 
-                           data-url="{{ route('admin.actividades.editar', $actividad) }}">
+                           data-url="{{ route('admin.reservas.editar', $reserva) }}">
                           <i class="fas fa-edit"></i> Editar
                         </a>
-                        <form method="POST" action="{{ route('admin.actividades.eliminar', $actividad) }}" style="display:inline; margin: 0;">
+                        <form method="POST" action="{{ route('admin.reservas.eliminar', $reserva) }}" style="display:inline; margin: 0;">
                           @csrf
                           @method('DELETE')
                           <button type="button" class="btn-custom-eliminar btn-eliminar">
@@ -84,7 +85,9 @@
                       </div>
                     </td>
                   </tr>
-                @endforeach
+                @empty
+                  <tr><td colspan="5">No hay reservas registradas.</td></tr>
+                @endforelse
               </tbody>
             </table>
           </div>
@@ -93,7 +96,6 @@
     </div>
   </div>
 @endsection
-
 
 <style>
   .inline-button {
@@ -154,5 +156,3 @@
     margin-right: 10px;
   }
 </style>
-
-

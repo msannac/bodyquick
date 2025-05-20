@@ -29,6 +29,10 @@
         <a href="{{ route('admin.entrenadores.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
           Listar Entrenadores
         </a>
+        </a>
+        <a href="{{ route('admin.reservas.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
+           Listar Reservas
+        </a>
       </div>
     </div>
 
@@ -36,11 +40,38 @@
     <div class="col-md-10">
       <div class="container mt-4">
         <h2>Calendario</h2>
-        <!-- Reemplaza el src con el enlace a tu calendario de Google -->
-        <iframe src="https://calendar.google.com/calendar/embed?src=TU_EMAIL%40ejemplo.com&ctz=Europe%2FMadrid" 
-                style="border: 0" width="100%" height="600" frameborder="0" scrolling="no"></iframe>
+        <!-- Calendario de Google incrustado -->
+        <iframe id="iframeGoogleCalendar" src="https://calendar.google.com/calendar/embed?src=manueldesandenacarino%40gmail.com&ctz=Europe%2FMadrid" style="border: 0" width="100%" height="800" frameborder="0" scrolling="no"></iframe>
       </div>
     </div>
   </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+// Recargar el iframe de Google Calendar tras operaciones AJAX exitosas de reservas
+(function(){
+  // Escuchar evento global tras recarga AJAX de reservas
+  document.addEventListener('reservas:actualizadas', function() {
+    var iframe = document.getElementById('iframeGoogleCalendar');
+    if (iframe) {
+      // Forzar recarga del iframe
+      var src = iframe.src;
+      iframe.src = '';
+      setTimeout(function(){ iframe.src = src; }, 100);
+    }
+  });
+
+  // Hook automático para integración con el JS global de reservas
+  if (window.jQuery) {
+    $(document).ajaxSuccess(function(event, xhr, settings) {
+      // Detectar si la petición AJAX es de reservas admin
+      if (settings.url && settings.url.includes('/admin/reservas')) {
+        document.dispatchEvent(new Event('reservas:actualizadas'));
+      }
+    });
+  }
+})();
+</script>
+@endpush

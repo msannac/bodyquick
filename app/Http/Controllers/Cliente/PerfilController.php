@@ -19,6 +19,12 @@ class PerfilController extends Controller
     public function update(Request $request)
     {
         $user = Auth::user();
+        if (!$user || !$user instanceof \App\Models\User) {
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Debes iniciar sesión para actualizar tu perfil.'], 401);
+            }
+            return redirect()->route('login')->with('error', 'Debes iniciar sesión para actualizar tu perfil.');
+        }
 
         // Validar todos los campos del formulario de perfil de cliente
         $data = $request->validate([

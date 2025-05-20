@@ -68,4 +68,20 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Devuelve la URL de la foto de perfil, o una por defecto si no hay.
+     */
+    public function getProfilePhotoUrlAttribute()
+    {
+        if ($this->profile_photo_path) {
+            // Si la ruta ya es una URL absoluta (por ejemplo, empieza por http), la devolvemos tal cual
+            if (str_starts_with($this->profile_photo_path, 'http')) {
+                return $this->profile_photo_path;
+            }
+            // Si la ruta ya es relativa a storage/app/public
+            return asset('storage/' . ltrim($this->profile_photo_path, '/'));
+        }
+        return asset('images/default-profile.jpg');
+    }
 }

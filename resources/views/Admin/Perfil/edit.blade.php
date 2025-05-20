@@ -22,7 +22,7 @@
         <label for="profile_photo" class="label-foto"><i class="fas fa-image icono-label"></i> Foto</label>
         @if($user->profile_photo_path)
           <div class="mb-2">
-            <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="Foto de Perfil" style="max-width: 100px; border-radius:50%; margin-top:6px; display:block; margin-left:auto; margin-right:auto;">
+            <img src="{{ $user->profile_photo_url }}" alt="Foto de Perfil" style="max-width: 100px; border-radius:50%; margin-top:6px; display:block; margin-left:auto; margin-right:auto;">
           </div>
         @endif
         <input type="file" name="profile_photo" id="profile_photo" class="form-control file-narrow" accept="image/*">

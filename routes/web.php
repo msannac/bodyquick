@@ -13,10 +13,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
+use Spatie\GoogleCalendar\Event;
+use App\Http\Controllers\LandingController;
 
-Route::get('/', function () {
-    return view('landing');
-});
+Route::get('/', [LandingController::class, 'index']);
 
 // Rutas de verificación de email (Laravel)
 Route::get('/email/verify', function () {
@@ -82,6 +82,18 @@ Route::middleware([
          Route::get('admin/clientes/{cliente}/editar', [App\Http\Controllers\Admin\UserController::class, 'editar'])->name('admin.clientes.editar');
          Route::put('admin/clientes/{cliente}', [App\Http\Controllers\Admin\UserController::class, 'actualizar'])->name('admin.clientes.actualizar');
          Route::delete('admin/clientes/{cliente}', [App\Http\Controllers\Admin\UserController::class, 'eliminar'])->name('admin.clientes.eliminar');
+
+         // Rutas para el CRUD de reservas (admin)
+         Route::get('admin/reservas', [App\Http\Controllers\Admin\ReservaController::class, 'index'])->name('admin.reservas.listar');
+         Route::get('admin/reservas/crear', [App\Http\Controllers\Admin\ReservaController::class, 'create'])->name('admin.reservas.crear');
+         Route::post('admin/reservas', [App\Http\Controllers\Admin\ReservaController::class, 'store'])->name('admin.reservas.almacenar');
+         Route::get('admin/reservas/{reserva}/editar', [App\Http\Controllers\Admin\ReservaController::class, 'edit'])->name('admin.reservas.editar');
+         Route::put('admin/reservas/{reserva}', [App\Http\Controllers\Admin\ReservaController::class, 'update'])->name('admin.reservas.actualizar');
+         Route::delete('admin/reservas/{reserva}', [App\Http\Controllers\Admin\ReservaController::class, 'destroy'])->name('admin.reservas.eliminar');
+
+         // Rutas para AJAX de reservas admin (días y huecos disponibles)
+         Route::get('admin/reservas/dias-disponibles', [App\Http\Controllers\Admin\ReservaController::class, 'diasDisponibles'])->name('admin.reservas.diasDisponibles');
+         Route::get('admin/reservas/huecos-disponibles', [App\Http\Controllers\Admin\ReservaController::class, 'huecosDisponibles'])->name('admin.reservas.huecosDisponibles');
     });
 
     Route::middleware(['auth'])->prefix('admin')->group(function () {
@@ -142,3 +154,12 @@ Route::post('/logout', function () {
     Auth::logout();
     return redirect('/');
 })->name('logout');
+
+Route::get('/test-google-calendar', function () {
+    $event = Event::create([
+        'name' => 'Evento de prueba desde ruta',
+        'startDateTime' => now()->addHour(),
+        'endDateTime' => now()->addHours(2),
+    ]);
+    return 'Evento creado en Google Calendar con ID: ' . $event->id;
+});

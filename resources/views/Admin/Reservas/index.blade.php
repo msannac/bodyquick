@@ -47,6 +47,20 @@
               <i class="fas fa-plus"></i>
             </a>
           </div>
+          <!-- Buscador de clientes -->
+          <form id="formBuscarClienteReserva" class="mb-3 mt-3" autocomplete="off">
+            <div class="row align-items-end">
+              <div class="form-group col-sm-12 col-md-4">
+                <label for="inputBuscarClienteReserva" class="d-block mb-0">Buscar cliente</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="fa fa-search"></i></span>
+                  </div>
+                  <input type="text" name="cliente" id="inputBuscarClienteReserva" class="form-control" placeholder="Nombre del cliente...">
+                </div>
+              </div>
+            </div>
+          </form>
           @if(session('success'))
             <div class="alert alert-success mt-3">{{ session('success') }}</div>
           @endif
@@ -54,17 +68,19 @@
             <table class="table table-bordered table-striped table-reservas-admin">
               <thead class="thead-dark">
                 <tr>
-                  <th>Cliente</th>
-                  <th>Actividad</th>
-                  <th>Fecha</th>
-                  <th>Hora</th>
+                  <th class="sortable" data-col="0">Cliente <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="1">Apellidos <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="2">Actividad <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="3">Fecha <span class="sort-icon"></span></th>
+                  <th class="sortable" data-col="4">Hora <span class="sort-icon"></span></th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="tablaReservasAdmin">
-                @forelse($reservas as $reserva)
+                @foreach($reservas as $reserva)
                   <tr>
                     <td>{{ $reserva->cliente->name ?? '-' }}</td>
+                    <td>{{ $reserva->cliente->apellidos ?? '-' }}</td>
                     <td>{{ $reserva->cita->actividad->nombre ?? '-' }}</td>
                     <td>{{ $reserva->cita->fecha ?? '-' }}</td>
                     <td>{{ $reserva->cita->hora_inicio ?? '-' }}</td>
@@ -85,9 +101,7 @@
                       </div>
                     </td>
                   </tr>
-                @empty
-                  <tr><td colspan="5">No hay reservas registradas.</td></tr>
-                @endforelse
+                @endforeach
               </tbody>
             </table>
           </div>
@@ -96,6 +110,83 @@
     </div>
   </div>
 @endsection
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+  $('#inputBuscarClienteReserva').on('keyup', function(){
+    var valor = $(this).val();
+    if(valor.length >= 3 || valor.length === 0){
+      $.ajax({
+        url: "{{ route('admin.reservas.listar') }}",
+        method: 'GET',
+        data: { cliente: valor },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(data){
+          $('#tablaReservasAdmin').html(data.tbody);
+        }
+      });
+    }
+  });
+  $('#formBuscarClienteReserva').on('submit', function(e) {
+    e.preventDefault();
+    var valor = $('#inputBuscarClienteReserva').val();
+    $.ajax({
+      url: "{{ route('admin.reservas.listar') }}",
+      method: 'GET',
+      data: { cliente: valor },
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      success: function(data){
+        $('#tablaReservasAdmin').html(data.tbody);
+      }
+    });
+  });
+
+  // Ordenación de columnas en la tabla de reservas admin
+  var sortState = {};
+  var originalRows = [];
+  var $tbody = $('#tablaReservasAdmin');
+  $tbody.find('tr').each(function(){
+    originalRows.push($(this));
+  });
+  function resetSortIcons() {
+    $('.sort-icon').text('');
+  }
+  $('.table-reservas-admin .sortable').css('cursor','pointer').on('click', function(){
+    var col = $(this).data('col');
+    var rows = $tbody.find('tr').toArray();
+    var state = sortState[col] || 'none';
+    if(state === 'none') state = 'asc';
+    else if(state === 'asc') state = 'desc';
+    else state = 'none';
+    sortState = {}; sortState[col] = state;
+    resetSortIcons();
+    if(state === 'asc') $(this).find('.sort-icon').text('▲');
+    else if(state === 'desc') $(this).find('.sort-icon').text('▼');
+    if(state === 'none') {
+      $tbody.html('');
+      originalRows.forEach(function($tr){ $tbody.append($tr); });
+    } else {
+      rows.sort(function(a, b){
+        var aText = $(a).children().eq(col).text().trim();
+        var bText = $(b).children().eq(col).text().trim();
+        var aNum = parseFloat(aText.replace(',', '.'));
+        var bNum = parseFloat(bText.replace(',', '.'));
+        if(!isNaN(aNum) && !isNaN(bNum)) {
+          return state === 'asc' ? aNum - bNum : bNum - aNum;
+        }
+        if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(aText) && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(bText)) {
+          return state === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+        }
+        return state === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+      });
+      $tbody.html('');
+      rows.forEach(function(tr){ $tbody.append(tr); });
+    }
+  });
+});
+</script>
+@endpush
 
 <style>
   .inline-button {
@@ -155,4 +246,6 @@
   .btn-group-acciones > *:not(:last-child) {
     margin-right: 10px;
   }
+  .sortable { cursor: pointer; }
+  .sort-icon { font-size: 12px; margin-left: 4px; }
 </style>

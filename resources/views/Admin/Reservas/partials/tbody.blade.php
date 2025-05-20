@@ -1,6 +1,7 @@
 @foreach($reservas as $reserva)
 <tr>
     <td>{{ $reserva->cliente->name ?? '-' }}</td>
+    <td>{{ $reserva->cliente->apellidos ?? '-' }}</td>
     <td>{{ $reserva->cita->actividad->nombre ?? '-' }}</td>
     <td>{{ $reserva->cita->fecha ?? '-' }}</td>
     <td>{{ $reserva->cita->hora_inicio ?? '-' }}</td>

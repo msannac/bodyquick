@@ -8,10 +8,39 @@ use App\Models\Reserva;
 
 class ReservaController extends Controller
 {
-    // Muestra el listado de reservas
-    public function index()
+    // Muestra el listado de reservas (con búsqueda AJAX por cliente, letras en cualquier orden, incluyendo apellidos)
+    public function index(Request $request)
     {
-        $reservas = Reserva::with(['cita', 'cliente'])->orderByDesc('created_at')->get();
+        $query = Reserva::with(['cita', 'cliente'])->orderByDesc('created_at');
+        if ($request->filled('cliente') && strlen($request->cliente) >= 3) {
+            $letras = mb_str_split(strtolower($request->cliente));
+            // Primer filtro: al menos una letra en el nombre o apellidos
+            $query->whereHas('cliente', function ($q) use ($letras) {
+                foreach ($letras as $letra) {
+                    $q->where(function($subq) use ($letra) {
+                        $subq->whereRaw('LOWER(name) LIKE ?', ["%$letra%"])
+                             ->orWhereRaw('LOWER(apellidos) LIKE ?', ["%$letra%"]);
+                    });
+                }
+            });
+            $reservas = $query->get();
+            // Segundo filtro: todas las letras presentes en el nombre o apellidos (en cualquier orden)
+            $reservas = $reservas->filter(function($reserva) use ($letras) {
+                $nombreCompleto = strtolower(($reserva->cliente->name ?? '') . ' ' . ($reserva->cliente->apellidos ?? ''));
+                foreach ($letras as $letra) {
+                    if (strpos($nombreCompleto, $letra) === false) {
+                        return false;
+                    }
+                }
+                return true;
+            })->values();
+        } else {
+            $reservas = $query->get();
+        }
+        if ($request->ajax()) {
+            $tbody = view('admin.reservas.partials.tbody', compact('reservas'))->render();
+            return response()->json(['tbody' => $tbody]);
+        }
         return view('admin.reservas.index', compact('reservas'));
     }
 

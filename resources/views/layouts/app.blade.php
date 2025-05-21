@@ -47,6 +47,9 @@
                    style="width:40px; height:40px; border-radius:50%; object-fit:cover;" 
                    class="mr-3">
             </a>
+            <a href="#" class="btn" id="btnMarket" style="background-color: #f4b400; border: 1px solid #f4b400; color: #fff; padding: 8px 15px; border-radius: 5px; text-decoration: none; margin-left: 10px;">
+              <i class="fas fa-store"></i>
+            </a>
             <a href="{{ route('logout') }}" class="btn -btn-logout"
             style="background-color: red; border: 1px solid red; color: #ffffff; padding: 8px 15px; border-radius: 5px; text-decoration: none; margin-left: 15px;"
                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
@@ -209,6 +212,15 @@
           e.preventDefault();
           var url = $(this).data('url');
           $.get(url, function(data) {
+            $('#modalAccion .modal-body').html(data);
+            $('#modalAccion').modal('show');
+          });
+        });
+
+        // Botón Market para clientes y admin: abre el listado de productos en el modal
+        $(document).on('click', '#btnMarket', function(e) {
+          e.preventDefault();
+          $.get("{{ route('cliente.productos.index') }}", function(data) {
             $('#modalAccion .modal-body').html(data);
             $('#modalAccion').modal('show');
           });

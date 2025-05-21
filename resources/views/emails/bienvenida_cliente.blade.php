@@ -7,7 +7,9 @@ Te damos la bienvenida a Bodyquick. Estos son tus datos de acceso:
 - **Correo electrónico:** {{ $user->email }}
 - **Contraseña:** {{ $password }}
 
-Puedes acceder a tu cuenta desde el siguiente enlace:
+> **Por motivos de seguridad, le recomendamos encarecidamente que cambie la contraseña temporal proporcionada en este correo tras su primer acceso a la plataforma.**
+
+Puede acceder a su cuenta desde el siguiente enlace:
 
 <x-mail::button :url="url('/')">
 Acceder a Bodyquick
@@ -16,14 +18,14 @@ Acceder a Bodyquick
 @if($verificationUrl)
 ---
 
-**Antes de poder acceder a todas las funcionalidades, debes verificar tu correo electrónico:**
+**Antes de poder acceder a todas las funcionalidades, debe verificar su correo electrónico:**
 
 <x-mail::button :url="$verificationUrl">
 Verificar mi correo
 </x-mail::button>
 @endif
 
-Si tienes alguna duda, no dudes en contactarnos.
+Si tiene alguna duda, no dude en contactarnos.
 
 ¡Gracias por confiar en nosotros!<br>
 {{ config('app.name') }}

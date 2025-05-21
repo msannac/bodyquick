@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title','Panel de Control - Listado de Entrenadores')
+@section('title','Panel de Control - Listado de Productos')
 
 @section('content')
 <div class="container-fluid">
@@ -29,7 +29,6 @@
           <a href="{{ route('admin.entrenadores.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
             Listar Entrenadores
           </a>
-          </a>
           <a href="{{ route('admin.reservas.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
             Listar Reservas
           </a>
@@ -42,38 +41,40 @@
       <div class="col-12 col-md-10">
         <div class="container mt-4 position-relative">
           <div class="d-flex align-items-center">
-            <h1 class="mb-0"><i class="fa-solid fa-list"></i> Listado de Entrenadores</h1>
+            <h1 class="mb-0"><i class="fa-solid fa-list"></i> Listado de Productos</h1>
             <!-- Botón Crear para abrir el modal -->
-            <a href="{{ route('admin.entrenadores.crear') }}" 
+            <a href="{{ route('admin.productos.crear') }}" 
                class="btn btn-success ml-3 inline-button abrirModal" 
-               data-url="{{ route('admin.entrenadores.crear') }}">
+               data-url="{{ route('admin.productos.crear') }}">
               <i class="fas fa-plus"></i>
             </a>
           </div>
-          @if(session('status'))
-            <div class="alert alert-success">{{ session('status') }}</div>
+          @if(session('success'))
+            <div class="alert alert-success mt-3">{{ session('success') }}</div>
           @endif
-          <!-- Cards de entrenadores -->
+          <!-- Cards de productos -->
           <div class="row mt-4">
-            @foreach($entrenadores as $entrenador)
+            @foreach($productos as $producto)
               <div class="col-12 col-md-4 mb-4">
                 <div class="card small-card">
                   <div class="circle-img-wrapper">
-                    @if($entrenador->profile_photo_path)
-                      <img src="{{ asset('storage/' . $entrenador->profile_photo_path) }}" class="card-img-top" alt="{{ $entrenador->nombre }}">
+                    @if($producto->foto)
+                      <img src="{{ asset('storage/' . $producto->foto) }}" class="card-img-top" alt="{{ $producto->nombre }}">
                     @else
-                      <img src="{{ asset('images/default-user.png') }}" class="card-img-top" alt="{{ $entrenador->nombre }}">
+                      <img src="{{ asset('images/producto-default.png') }}" class="card-img-top" alt="{{ $producto->nombre }}">
                     @endif
                   </div>
                   <div class="card-body text-center p-2">
-                    <h6 class="card-title mb-1">{{ $entrenador->nombre }} {{ $entrenador->apellidos }}</h6>
-                    <p class="card-text mb-2">{{ ucfirst($entrenador->especialidad) }}</p>
+                    <h6 class="card-title mb-1">{{ $producto->nombre }}</h6>
+                    <p class="card-text mb-2">{{ $producto->descripcion }}</p>
+                    <p class="card-text mb-2">Precio: <strong>{{ number_format($producto->precio, 2) }} €</strong></p>
+                    <p class="card-text mb-2">IVA (21%): <strong>{{ number_format($producto->iva, 2) }} €</strong></p>
                     <div class="btn-group-acciones">
-                      <a href="{{ route('admin.entrenadores.editar', $entrenador) }}" 
-                         class="btn-custom-editar abrirModal" data-url="{{ route('admin.entrenadores.editar', $entrenador) }}">
+                      <a href="{{ route('admin.productos.editar', $producto) }}" 
+                         class="btn-custom-editar abrirModal" data-url="{{ route('admin.productos.editar', $producto) }}">
                         <i class="fas fa-edit"></i>
                       </a>
-                      <form method="POST" action="{{ route('admin.entrenadores.eliminar', $entrenador) }}" style="display:inline;">
+                      <form method="POST" action="{{ route('admin.productos.eliminar', $producto) }}" style="display:inline;">
                         @csrf
                         @method('DELETE')
                         <button type="button" class="btn-custom-eliminar btn-eliminar">

@@ -25,7 +25,7 @@ Route::get('/email/verify', function () {
 
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill();
-    return redirect('/'); // Puedes cambiar la ruta de redirección si lo deseas
+    return redirect('/'); 
 })->middleware(['auth', 'signed'])->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
@@ -94,6 +94,14 @@ Route::middleware([
          // Rutas para AJAX de reservas admin (días y huecos disponibles)
          Route::get('admin/reservas/dias-disponibles', [App\Http\Controllers\Admin\ReservaController::class, 'diasDisponibles'])->name('admin.reservas.diasDisponibles');
          Route::get('admin/reservas/huecos-disponibles', [App\Http\Controllers\Admin\ReservaController::class, 'huecosDisponibles'])->name('admin.reservas.huecosDisponibles');
+
+         // Rutas para el CRUD de productos (admin)
+         Route::get('admin/productos', [App\Http\Controllers\Admin\ProductoController::class, 'listar'])->name('admin.productos.listar');
+         Route::get('admin/productos/crear', [App\Http\Controllers\Admin\ProductoController::class, 'crear'])->name('admin.productos.crear');
+         Route::post('admin/productos', [App\Http\Controllers\Admin\ProductoController::class, 'guardar'])->name('admin.productos.guardar');
+         Route::get('admin/productos/{producto}/editar', [App\Http\Controllers\Admin\ProductoController::class, 'editar'])->name('admin.productos.editar');
+         Route::put('admin/productos/{producto}', [App\Http\Controllers\Admin\ProductoController::class, 'actualizar'])->name('admin.productos.actualizar');
+         Route::delete('admin/productos/{producto}', [App\Http\Controllers\Admin\ProductoController::class, 'eliminar'])->name('admin.productos.eliminar');
     });
 
     Route::middleware(['auth'])->prefix('admin')->group(function () {
@@ -120,6 +128,10 @@ Route::middleware(['auth:sanctum', ClienteMiddleware::class])->group(function ()
          ->name('cliente.perfil.editar');
     Route::post('/cliente/perfil/actualizar', [ClientePerfilController::class, 'update'])
          ->name('cliente.perfil.actualizar');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/cliente/productos', [App\Http\Controllers\Cliente\ProductoController::class, 'index'])->name('cliente.productos.index');
 });
 
 // Chatbot Gemini

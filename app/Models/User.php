@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Producto;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -83,5 +84,11 @@ class User extends Authenticatable implements MustVerifyEmail
             return asset('storage/' . ltrim($this->profile_photo_path, '/'));
         }
         return asset('images/default-profile.jpg');
+    }
+
+    // Relación N:M con productos a través de carrito
+    public function productos()
+    {
+        return $this->belongsToMany(Producto::class, 'carrito', 'user_id', 'producto_id');
     }
 }

@@ -27,15 +27,19 @@ class PerfilController extends Controller
         }
 
         // Validar todos los campos del formulario de perfil de cliente
-        $data = $request->validate([
+        $rules = [
             'name'          => 'required|string|max:255',
             'apellidos'     => 'nullable|string|max:255',
             'dni'           => 'nullable|string|max:20',
             'telefono'      => 'nullable|string|max:30',
             // No se permite modificar el email
-            'password'      => 'nullable|string|min:8|confirmed',
             'profile_photo' => 'nullable|image|max:2048',
-        ]);
+        ];
+        // Si el usuario quiere cambiar la contraseña, obligar a confirmar
+        if ($request->filled('password')) {
+            $rules['password'] = 'required|string|min:8|confirmed';
+        }
+        $data = $request->validate($rules);
 
         $user->name = $data['name'];
         $user->apellidos = $data['apellidos'] ?? $user->apellidos;

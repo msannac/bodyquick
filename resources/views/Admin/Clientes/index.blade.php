@@ -33,6 +33,9 @@
           <a href="{{ route('admin.reservas.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
             Listar Reservas
           </a>
+          <a href="{{ route('admin.productos.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
+            Listar Productos
+          </a>
         </div>
       </div> 
       <!-- Panel de Contenido -->

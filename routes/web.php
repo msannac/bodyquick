@@ -132,6 +132,9 @@ Route::middleware(['auth:sanctum', ClienteMiddleware::class])->group(function ()
          ->name('cliente.perfil.actualizar');
 });
 
+// Historial de compras del cliente
+Route::middleware(['auth'])->get('/historial-compras', [App\Http\Controllers\PedidoController::class, 'historial'])->name('pedidos.historial');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/cliente/productos', [App\Http\Controllers\Cliente\ProductoController::class, 'index'])->name('cliente.productos.index');
 });
@@ -144,7 +147,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/carrito/eliminar/{id}', [App\Http\Controllers\CarritoController::class, 'eliminar'])->name('carrito.eliminar');
     // Ruta AJAX para obtener el contador del carrito
     Route::get('/carrito/contador', [App\Http\Controllers\CarritoController::class, 'contador'])->name('carrito.contador');
+    Route::post('/carrito/checkout', [App\Http\Controllers\CarritoController::class, 'checkout'])->name('carrito.checkout');
 });
+
+// Stripe checkout success/cancel
+Route::get('/checkout/success', [App\Http\Controllers\CarritoController::class, 'checkoutSuccess'])->name('checkout.success');
+Route::get('/checkout/cancel', [App\Http\Controllers\CarritoController::class, 'checkoutCancel'])->name('checkout.cancel');
 
 // Chatbot Gemini
 Route::post('/chatbot/ask', [App\Http\Controllers\ChatbotController::class, 'ask'])->name('chatbot.ask');

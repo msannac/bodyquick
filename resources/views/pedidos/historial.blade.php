@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Mis Citas Reservadas')
+@section('title', 'Historial de compras')
 
 @section('content')
 <main class="container-fluid">
@@ -19,56 +19,44 @@
         <div class="col-md-9">
             <div class="container mt-4">
                 <div class="d-flex align-items-center">
-                    <h1 class="mb-0"><i class="fa-solid fa-list"></i> Mis Citas Reservadas</h1>
-                    <!-- Botón Crear -->
-                    <a href="{{ route('cliente.reservas.nueva') }}" 
-                       class="btn btn-success ml-3 inline-button abrirModal" 
-                       data-url="{{ route('cliente.reservas.nueva') }}">
-                      <i class="fas fa-plus"></i>
-                    </a>
+                    <h1 class="mb-0"><i class="fa-solid fa-shopping-bag"></i> Historial de compras</h1>
                 </div>
-                @if(session('status'))
-                    <div class="alert alert-success">{{ session('status') }}</div>
+                @if($pedidos->isEmpty())
+                    <div class="alert alert-info">Aún no has realizado ninguna compra.</div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th># Pedido</th>
+                                    <th>Fecha</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Factura</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($pedidos as $pedido)
+                                    <tr>
+                                        <td>{{ $pedido->id }}</td>
+                                        <td>{{ $pedido->created_at->format('d/m/Y H:i') }}</td>
+                                        <td>{{ number_format($pedido->total, 2) }} €</td>
+                                        <td>{{ ucfirst($pedido->status) }}</td>
+                                        <td>
+                                            @if($pedido->factura_pdf)
+                                                <a href="{{ asset('storage/' . $pedido->factura_pdf) }}" target="_blank" class="btn-custom-editar">
+                                                    <i class="fas fa-file-invoice"></i> Ver factura
+                                                </a>
+                                            @else
+                                                <span class="text-muted">No disponible</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 @endif
-                @if(session('error'))
-                    <div class="alert alert-danger">{{ session('error') }}</div>
-                @endif
-
-                <table class="table table-bordered table-striped">
-                  <thead class="thead-dark">
-                    <tr>
-                      <th>Fecha</th>
-                      <th>Hora</th>
-                      <th>Actividad</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @foreach($reservas as $reserva)
-                    <tr>
-                      <td>{{ $reserva->cita->fecha }}</td>
-                      <td>{{ $reserva->cita->hora_inicio }}</td>
-                      <td>{{ $reserva->cita->actividad->nombre ?? 'Sin Actividad' }}</td>
-                      <td>
-                        <div class="btn-group-acciones">
-                          <a href="{{ route('cliente.reservas.editar', $reserva) }}" 
-                             class="btn-custom-editar abrirModal" 
-                             data-url="{{ route('cliente.reservas.editar', $reserva) }}">
-                            <i class="fas fa-edit"></i> Editar
-                          </a>
-                          <form method="POST" action="{{ route('cliente.reservas.eliminar', $reserva) }}" style="display:inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="button" class="btn-custom-eliminar btn-eliminar" data-toggle="modal" data-target="#confirmDeleteModal">
-                              <i class="fas fa-trash-alt"></i> Eliminar
-                            </button>
-                          </form>
-                        </div>
-                      </td>
-                    </tr>
-                    @endforeach
-                  </tbody>
-                </table>
             </div>
         </div>
     </div>

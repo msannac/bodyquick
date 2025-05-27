@@ -711,58 +711,11 @@
             var badge = $("#carrito-badge");
             $.get("{{ route('carrito.contador') }}", function(data) {
                 if (data.count > 0) {
-                    badge.text(data.count).show();
+                    badge.text(data.count).removeClass('d-none').show();
                 } else {
-                    badge.text('').hide();
+                    badge.text('').addClass('d-none').hide();
                 }
             });
-        }
-
-        // --- GLOBAL: actualizarVistaCarrito ---
-        window.actualizarVistaCarrito = function(data) {
-          // Actualiza en la página principal
-          if ($('#carrito-contenido').length) {
-            if (data.html !== undefined) {
-              $('#carrito-contenido').html(data.html);
-            }
-            if (data.tfoot !== undefined) {
-              $('#carrito-tfoot').html(data.tfoot);
-            }
-            if (data.empty !== undefined) {
-              if (data.empty) {
-                $('.table').hide();
-                if ($('#carrito-vacio-msg').length === 0) {
-                  $('<div id="carrito-vacio-msg" class="alert alert-info mt-3">Tu carrito está vacío.</div>').insertAfter('.table');
-                }
-              } else {
-                $('.table').show();
-                $('#carrito-vacio-msg').remove();
-              }
-            }
-          }
-          // Actualiza en el modal si está abierto
-          if ($('#modalAccion').hasClass('show')) {
-            var modalBody = $('#modalAccion .modal-body');
-            if (modalBody.find('#carrito-contenido').length) {
-              if (data.html !== undefined) {
-                modalBody.find('#carrito-contenido').html(data.html);
-              }
-              if (data.tfoot !== undefined) {
-                modalBody.find('#carrito-tfoot').html(data.tfoot);
-              }
-              if (data.empty !== undefined) {
-                if (data.empty) {
-                  modalBody.find('.table').hide();
-                  if (modalBody.find('#carrito-vacio-msg').length === 0) {
-                    $('<div id="carrito-vacio-msg" class="alert alert-info mt-3">Tu carrito está vacío.</div>').insertAfter(modalBody.find('.table'));
-                  }
-                } else {
-                  modalBody.find('.table').show();
-                  modalBody.find('#carrito-vacio-msg').remove();
-                }
-              }
-            }
-          }
         }
         // Llamar a la función al cargar la página para establecer el contador inicial
         window.actualizarContadorCarrito();
@@ -912,6 +865,97 @@ $('#btnConfirmDelete').off('click.carrito').on('click.carrito', function() {
   btnEliminarCarrito = null;
 });
 </script>
+<script>
+    // --- FUNCIÓN GLOBAL: Actualizar la vista del carrito (modal o página) ---
+    window.actualizarVistaCarrito = function(data) {
+      // Si hay HTML de carrito y el modal está abierto, actualiza SOLO el tbody/tfoot si la tabla existe
+      if (data && data.html && $('#modalAccion .modal-body').length) {
+        // Previene inyectar accidentalmente otro modal dentro del modal global
+        if (typeof data.html === 'string' && (data.html.includes('modal') || data.html.includes('loginModal'))) {
+          $('#modalAccion .modal-body').html('<div class="alert alert-danger">Error: Se intentó cargar un modal dentro de otro. Por favor, recarga la página.</div>');
+          return;
+        }
+        // Si detecta formulario de login, muestra aviso de sesión expirada
+        if (typeof data.html === 'string' && data.html.includes('id="loginModal"')) {
+          $('#modalAccion').modal('hide');
+          alert('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+          $('#loginModal').modal('show');
+          return;
+        }
+        var $tabla = $('#modalAccion .modal-body table');
+        if ($tabla.length) {
+          // Actualiza solo el tbody y tfoot si existen
+          if ($tabla.find('tbody#carrito-contenido').length) {
+            $tabla.find('tbody#carrito-contenido').replaceWith(data.html);
+          }
+          if (data.tfoot && $tabla.find('tfoot#carrito-tfoot').length) {
+            $tabla.find('tfoot#carrito-tfoot').replaceWith(data.tfoot);
+          }
+        } else {
+          // Si no hay tabla (carrito vacío o estructura perdida), recarga el modal completo vía AJAX
+          $.get('/carrito', function(htmlCompleto) {
+            $('#modalAccion .modal-body').html(htmlCompleto);
+          }).fail(function(){
+            $('#modalAccion .modal-body').html('<div class="alert alert-danger">No se pudo recargar el carrito. Por favor, recarga la página.</div>');
+          });
+        }
+      }
+      // Si tienes una tabla o sección de carrito en página, puedes actualizarla aquí si lo necesitas
+      // Por ejemplo:
+      // if (data && data.html && $('#carrito-page').length) {
+      //   $('#carrito-page').html(data.html);
+      // }
+      // Puedes añadir más lógica según tu estructura
+    };
+
+    // --- DEBUG: Al abrir el modal, mostrar si existe el botón de checkout ---
+    $(document).on('shown.bs.modal', '#modalAccion', function () {
+      var btns = $('#modalAccion').find('#btnCheckout');
+      console.log('[DEBUG] Botones #btnCheckout en modal:', btns.length, btns);
+    });
+    // --- DEBUG: Al cargar cualquier contenido en el modal, mostrar si existe el botón de checkout ---
+    // Sustituir DOMSubtreeModified por MutationObserver para evitar warnings de deprecación
+    (function(){
+      var target = document.querySelector('#modalAccion .modal-body');
+      if(target) {
+        var observer = new MutationObserver(function(mutations) {
+          var btns = $('#modalAccion').find('#btnCheckout');
+          if (btns.length > 0) {
+            console.log('[DEBUG] #btnCheckout detectado tras modificar DOM en modal');
+          }
+        });
+        observer.observe(target, { childList: true, subtree: true });
+      }
+    })();
+
+    // --- INTEGRACIÓN STRIPE CHECKOUT ---
+    $(document).off('click.checkout').on('click.checkout', '#btnCheckout', function(e) {
+      console.log('[DEBUG] Click en #btnCheckout (handler global)'); // <-- debug robusto
+      e.preventDefault();
+      var btn = $(this);
+      btn.prop('disabled', true).text('Procesando...');
+      $.ajax({
+        url: '/carrito/checkout',
+        type: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+          'Accept': 'application/json'
+        },
+        success: function(resp) {
+          if (resp.url) {
+            window.location.href = resp.url;
+          } else {
+            alert('No se pudo iniciar el pago.');
+            btn.prop('disabled', false).text('Finalizar compra');
+          }
+        },
+        error: function(xhr) {
+          alert('Error al iniciar el pago.');
+          btn.prop('disabled', false).text('Finalizar compra');
+        }
+      });
+    });
+    </script>
   @yield('scripts')
   @stack('scripts')
   </body>

@@ -30,7 +30,7 @@
         </tfoot>
     </table>
     <a href="#" class="btn btn-secondary abrirModal" data-url="{{ route('cliente.productos.index') }}">Seguir comprando</a>
-    <a href="#" class="btn btn-success float-right">Finalizar compra</a>
+    <a href="#" class="btn btn-success float-right" id="btnCheckout">Finalizar compra</a>
     @endif
 </div>
 @endsection

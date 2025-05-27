@@ -6,6 +6,10 @@ use App\Models\Producto;
 use App\Models\Carrito;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
+use App\Mail\FacturaClienteMail;
+use Illuminate\Support\Facades\Mail;
 
 
 class CarritoController extends Controller
@@ -36,7 +40,7 @@ class CarritoController extends Controller
                     .'</tfoot>'
                     .'</table>'
                     .'<a href="#" class="btn btn-secondary abrirModal" data-url="'.route('cliente.productos.index').'">Seguir comprando</a>'
-                    .'<a href="#" class="btn btn-success float-right">Finalizar compra</a>';
+                    .'<a href="#" class="btn btn-success float-right" id="btnCheckout">Finalizar compra</a>';
             }
             return response($html);
         }
@@ -47,6 +51,13 @@ class CarritoController extends Controller
     // Añadir producto al carrito (solo responde JSON)
     public function agregar(Request $request)
     {
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'session_expired' => true,
+                'message' => 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.'
+            ], 401);
+        }
         Log::info('CarritoController@agregar - LLEGA PETICION', [
             'user_id' => Auth::id(),
             'all' => $request->all(),
@@ -99,6 +110,13 @@ class CarritoController extends Controller
     // Modificar cantidad de un producto en el carrito (solo responde JSON)
     public function modificar(Request $request, $id)
     {
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'session_expired' => true,
+                'message' => 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.'
+            ], 401);
+        }
         Log::info('CarritoController@modificar - INICIO', [
             'user_id' => Auth::id(),
             'carrito_id' => $id,
@@ -138,6 +156,13 @@ class CarritoController extends Controller
     // Eliminar producto del carrito (solo responde JSON)
     public function eliminar($id)
     {
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'session_expired' => true,
+                'message' => 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.'
+            ], 401);
+        }
         Log::info('CarritoController@eliminar - INICIO', [
             'user_id' => Auth::id(),
             'carrito_id' => $id,
@@ -175,5 +200,105 @@ class CarritoController extends Controller
             $count = \App\Models\Carrito::where('user_id', Auth::id())->sum('cantidad');
         }
         return response()->json(['count' => $count]);
+    }
+
+    // Iniciar checkout con Stripe
+    public function checkout(Request $request)
+    {
+        $user = Auth::user();
+        $carrito = Carrito::with('producto')->where('user_id', $user->id)->get();
+        if ($carrito->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'El carrito está vacío.'], 400);
+        }
+
+        $lineItems = [];
+        foreach ($carrito as $item) {
+            $lineItems[] = [
+                'price_data' => [
+                    'currency' => 'eur',
+                    'product_data' => [
+                        'name' => $item->producto->nombre,
+                    ],
+                    'unit_amount' => intval($item->precio_unitario * 100), // Stripe espera céntimos
+                ],
+                'quantity' => $item->cantidad,
+            ];
+        }
+
+        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+        try {
+            $session = \Stripe\Checkout\Session::create([
+                'payment_method_types' => ['card'],
+                'line_items' => $lineItems,
+                'mode' => 'payment',
+                'success_url' => url('/checkout/success?session_id={CHECKOUT_SESSION_ID}'),
+                'cancel_url' => url('/checkout/cancel'),
+                'customer_email' => $user->email,
+            ]);
+            return response()->json(['success' => true, 'id' => $session->id, 'url' => $session->url]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // Stripe checkout success
+    public function checkoutSuccess(Request $request)
+    {
+        $user = Auth::user();
+        $sessionId = $request->get('session_id');
+        // Recuperar el carrito ANTES de vaciarlo
+        $carrito = \App\Models\Carrito::with('producto')->where('user_id', $user->id)->get();
+        if ($carrito->isEmpty()) {
+            return view('carrito.success'); // Ya procesado
+        }
+        // Calcular total
+        $total = 0;
+        foreach ($carrito as $item) {
+            $subtotal = $item->precio_unitario * $item->cantidad;
+            $iva = $item->iva * $item->cantidad / 100 * $item->precio_unitario;
+            $total += $subtotal + $iva;
+        }
+        // Crear el pedido
+        $order = \App\Models\Order::create([
+            'user_id' => $user->id,
+            'total' => $total,
+            'status' => 'pagado',
+            'payment_id' => $sessionId,
+        ]);
+        // Crear las líneas del pedido
+        foreach ($carrito as $item) {
+            \App\Models\OrderItem::create([
+                'order_id' => $order->id,
+                'producto_id' => $item->producto_id,
+                'nombre' => $item->producto->nombre,
+                'precio_unitario' => $item->precio_unitario,
+                'cantidad' => $item->cantidad,
+                'iva' => $item->iva,
+                'subtotal' => ($item->precio_unitario * $item->cantidad) + ($item->iva * $item->cantidad / 100 * $item->precio_unitario),
+            ]);
+        }
+        // Vaciar el carrito
+        \App\Models\Carrito::where('user_id', $user->id)->delete();
+        // Generar y guardar la factura PDF
+        $pdf = Pdf::loadView('factura', [
+            'order' => $order,
+            'user' => $user
+        ]);
+        $pdfPath = 'facturas/factura_' . $order->id . '.pdf';
+        Storage::disk('public')->put($pdfPath, $pdf->output());
+        // Guardar la ruta en el pedido
+        $order->factura_pdf = $pdfPath;
+        $order->save();
+        // Enviar la factura por email al usuario
+        Mail::to($user->email)->send(new FacturaClienteMail($order, $user, $pdfPath));
+        // Mostrar la vista de éxito
+        return view('carrito.success');
+    }
+
+    // Stripe checkout cancel
+    public function checkoutCancel(Request $request)
+    {
+        // Solo muestra una vista de cancelación
+        return view('carrito.cancel');
     }
 }

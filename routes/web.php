@@ -66,6 +66,8 @@ Route::middleware([
          Route::put('admin/citas/{cita}', [CitaController::class, 'actualizar'])->name('admin.citas.actualizar');
          Route::delete('admin/citas/{cita}', [CitaController::class, 'eliminar'])->name('admin.citas.eliminar');
          Route::get('admin/citas/huecos-disponibles', [CitaController::class, 'huecosDisponibles'])->name('admin.citas.huecosDisponibles');
+         Route::get('admin/citas/crear-masiva', [CitaController::class, 'crearMasiva'])->name('admin.citas.crearMasiva');
+         Route::post('admin/citas/almacenar-masiva', [CitaController::class, 'almacenarMasiva'])->name('admin.citas.almacenarMasiva');
 
          // Rutas para el CRUD de actividades 
          Route::get('admin/actividades', [ActividadController::class, 'listar'])->name('admin.actividades.listar');
@@ -134,6 +136,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cliente/productos', [App\Http\Controllers\Cliente\ProductoController::class, 'index'])->name('cliente.productos.index');
 });
 
+// Carrito
+Route::middleware(['auth'])->group(function () {
+    Route::get('/carrito', [App\Http\Controllers\CarritoController::class, 'index'])->name('carrito.index');
+    Route::post('/carrito/agregar', [App\Http\Controllers\CarritoController::class, 'agregar'])->name('carrito.agregar');
+    Route::post('/carrito/modificar/{id}', [App\Http\Controllers\CarritoController::class, 'modificar'])->name('carrito.modificar');
+    Route::post('/carrito/eliminar/{id}', [App\Http\Controllers\CarritoController::class, 'eliminar'])->name('carrito.eliminar');
+    // Ruta AJAX para obtener el contador del carrito
+    Route::get('/carrito/contador', [App\Http\Controllers\CarritoController::class, 'contador'])->name('carrito.contador');
+});
+
 // Chatbot Gemini
 Route::post('/chatbot/ask', [App\Http\Controllers\ChatbotController::class, 'ask'])->name('chatbot.ask');
 
@@ -142,24 +154,16 @@ Route::get('/chatbot', function () {
 })->name('chatbot.demo');
 
 Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])
-         ->name('admin.dashboard');
-    Route::get('/estadisticas', [App\Http\Controllers\Admin\DashboardController::class, 'estadisticas'])
-         ->name('admin.estadisticas');
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/estadisticas', [\App\Http\Controllers\Admin\DashboardController::class, 'estadisticas'])->name('admin.estadisticas');
 
     // Rutas para gestionar entrenadores
-    Route::get('/entrenadores', [\App\Http\Controllers\Admin\EntrenadorController::class, 'listar'])
-         ->name('admin.entrenadores.listar');
-    Route::get('/entrenadores/crear', [\App\Http\Controllers\Admin\EntrenadorController::class, 'crear'])
-         ->name('admin.entrenadores.crear');
-    Route::post('/entrenadores', [\App\Http\Controllers\Admin\EntrenadorController::class, 'almacenar'])
-         ->name('admin.entrenadores.almacenar');
-    Route::get('/entrenadores/{entrenador}/editar', [\App\Http\Controllers\Admin\EntrenadorController::class, 'editar'])
-         ->name('admin.entrenadores.editar');
-    Route::put('/entrenadores/{entrenador}', [\App\Http\Controllers\Admin\EntrenadorController::class, 'actualizar'])
-         ->name('admin.entrenadores.actualizar');
-    Route::delete('/entrenadores/{entrenador}', [\App\Http\Controllers\Admin\EntrenadorController::class, 'eliminar'])
-         ->name('admin.entrenadores.eliminar');
+    Route::get('/entrenadores', [\App\Http\Controllers\Admin\EntrenadorController::class, 'listar'])->name('admin.entrenadores.listar');
+    Route::get('/entrenadores/crear', [\App\Http\Controllers\Admin\EntrenadorController::class, 'crear'])->name('admin.entrenadores.crear');
+    Route::post('/entrenadores', [\App\Http\Controllers\Admin\EntrenadorController::class, 'almacenar'])->name('admin.entrenadores.almacenar');
+    Route::get('/entrenadores/{entrenador}/editar', [\App\Http\Controllers\Admin\EntrenadorController::class, 'editar'])->name('admin.entrenadores.editar');
+    Route::put('/entrenadores/{entrenador}', [\App\Http\Controllers\Admin\EntrenadorController::class, 'actualizar'])->name('admin.entrenadores.actualizar');
+    Route::delete('/entrenadores/{entrenador}', [\App\Http\Controllers\Admin\EntrenadorController::class, 'eliminar'])->name('admin.entrenadores.eliminar');
 });
 
 Route::post('/logout', function () {
@@ -175,3 +179,7 @@ Route::get('/test-google-calendar', function () {
     ]);
     return 'Evento creado en Google Calendar con ID: ' . $event->id;
 });
+
+Route::get('/faq', function () {
+    return view('faq');
+})->name('faq');

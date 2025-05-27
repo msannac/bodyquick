@@ -20,6 +20,22 @@
     @livewireStyles
 
     <style>
+      html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  main {
+    flex: 1 0 auto;
+  }
+  footer {
+    flex-shrink: 0;
+  }
       /* Otros estilos globales muy básicos que requieras */
       header, footer {
           background-color: #000;
@@ -49,6 +65,16 @@
             </a>
             <a href="#" class="btn" id="btnMarket" style="background-color: #f4b400; border: 1px solid #f4b400; color: #fff; padding: 8px 15px; border-radius: 5px; text-decoration: none; margin-left: 10px;">
               <i class="fas fa-store"></i>
+            </a>
+            @php
+                $carritoCount = 0;
+                if(auth()->check()) {
+                    $carritoCount = \App\Models\Carrito::where('user_id', auth()->id())->sum('cantidad');
+                }
+            @endphp
+            <a href="#" class="btn btn-outline-success ml-2 position-relative abrirModal" data-url="{{ route('carrito.index') }}">
+                <i class="fas fa-shopping-cart"></i>
+                <span id="carrito-badge" class="badge badge-danger position-absolute{{ $carritoCount > 0 ? '' : ' d-none' }}" style="top:0; right:0; font-size:0.8rem">{{ $carritoCount > 0 ? $carritoCount : '' }}</span>
             </a>
             <a href="{{ route('logout') }}" class="btn -btn-logout"
             style="background-color: red; border: 1px solid red; color: #ffffff; padding: 8px 15px; border-radius: 5px; text-decoration: none; margin-left: 15px;"
@@ -109,19 +135,17 @@
             <p>
               Estamos en Avda. de la Libertad 32 Local 13, Frente Colegio Pinar Hondo. El Puerto de Santa María.
             </p>
-            <div>
-              <iframe 
+            <div style="position:relative; min-height:150px;">
+              <!-- Google Maps embed oficial -->
+              <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3182.857964964839!2d-6.246302684692383!3d36.59542080000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd0dd02202fc63e7%3A0x4562de0aeca29e3e!2sBodyQuick!5e0!3m2!1ses-ES!2ses!4v1716220000000!5m2!1ses-ES!2ses"
-                width="100%" 
-                height="150" 
-                style="border:0;" 
-                allowfullscreen="" 
-                loading="lazy" 
+                width="100%"
+                height="150"
+                style="border:0; pointer-events:auto; position:relative; z-index:20; background:#fff;"
+                allowfullscreen=""
+                loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade">
               </iframe>
-              <a href="https://www.google.com/maps/place/BodyQuick/@36.595421,-6.243728,17z/data=!4m6!3m5!1s0xd0dd02202fc63e7:0x4562de0aeca29e3e!8m2!3d36.5954208!4d-6.2437278!16s%2Fg%2F11cs1klxw9?hl=es-ES&entry=ttu" target="_blank" class="btn btn-primary mt-2" style="width:100%;">
-                <i class="fas fa-map-marker-alt"></i> Ver en Google Maps
-              </a>
             </div>
           </div>
         </div>
@@ -200,20 +224,59 @@
       </div>
     </div>
 
+    <!-- Botón FAQ en la barra superior derecha -->
+    <button id="btnFaq" class="btn btn-link" style="position: absolute; top: 18px; right: 32px; z-index: 1051; font-size: 1.7rem; color: #27ae60;" data-url="/faq" title="Preguntas Frecuentes">
+        <i class="fas fa-question-circle"></i>
+    </button>
+    <!-- Modal FAQ grande -->
+    <div class="modal fade" id="modalFaq" tabindex="-1" role="dialog" aria-labelledby="modalFaqLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalFaqLabel"><i class="fas fa-question-circle text-success"></i> Preguntas Frecuentes</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body p-0" id="modalFaqBody">
+            <!-- Aquí se cargará el contenido de la FAQ por AJAX -->
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Scripts: jQuery, jQuery UI y Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
     <script>
+    $(document).ready(function(){
+      $('#btnFaq').on('click', function(e){
+        e.preventDefault();
+        var url = $(this).data('url');
+        $('#modalFaqBody').html('<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i></div>');
+        $('#modalFaq').modal('show');
+        $.get(url, function(data){
+          // Mostrar el HTML recibido directamente en el modal
+          $('#modalFaqBody').html(data);
+        }).fail(function(){
+          $('#modalFaqBody').html('<div class="alert alert-danger m-4">No se pudo cargar la información de preguntas frecuentes.</div>');
+        });
+      });
+    });
+    </script>
+    <script>
       $(document).ready(function(){
-        // Consolidar eventos para evitar duplicación
+        // Abrir cualquier modal AJAX with the class .abrirModal
         $(document).off('click', '.abrirModal').on('click', '.abrirModal', function(e) {
           e.preventDefault();
-          var url = $(this).data('url');
+          var url = $(this).data('url') || $(this).attr('href');
+          if (!url) return;
           $.get(url, function(data) {
             $('#modalAccion .modal-body').html(data);
             $('#modalAccion').modal('show');
+          }).fail(function(){
+            alert('Error al cargar el contenido del modal.');
           });
         });
 
@@ -373,27 +436,23 @@
 
         // Al cerrar el modal, destruir datepicker de citas admin
         $(document).on('hidden.bs.modal', '#modalAccion', function () {
-          var dateInputs = $(this).find('input.datepicker-cita, input#fecha_cita, input[name="fecha"]');
+          // Destruir todos los datepickers relevantes
+          var dateInputs = $(this).find('input.datepicker-cita, input#fecha_cita, input[name="fecha"], #fecha');
           if(dateInputs.length > 0) {
             dateInputs.each(function(){
               try { $(this).datepicker('destroy'); } catch(e){}
             });
           }
-        });
-
-        // Reiniciar el modal al cerrarlo
-        $(document).on('hidden.bs.modal', '#modalAccion', function () {
+          // Resetear selects de fecha y hueco
           const fechaSelect = document.getElementById('fecha');
           const huecoSelect = document.getElementById('hueco');
           if (fechaSelect) {
-            try {
-              $(fechaSelect).datepicker('destroy');
-            } catch (error) {}
             fechaSelect.innerHTML = '<option value="">Seleccione un día</option>';
           }
           if (huecoSelect) {
             huecoSelect.innerHTML = '<option value="">Seleccione un hueco</option>';
           }
+          // Limpiar eventos para evitar fugas de memoria
           $('#actividad').off('change');
           $('#fecha').off('changeDate');
         });
@@ -467,7 +526,7 @@
               $.get('/admin/reservas/huecos-disponibles', {actividad_id: actividadId, fecha: fecha}, function(huecos) {
                 if (Array.isArray(huecos)) {
                   huecos.forEach(function(hueco) {
-                    huecoSelect.innerHTML += `<option value="${hueco.id}">${hueco.hora_inicio} - ${hueco.hora_fin}</option>`;
+                    huecoSelect.append('<option value="'+hueco+'">'+hueco+'</option>');
                   });
                   huecoSelect.disabled = false;
                 }
@@ -554,7 +613,7 @@
               $.get('/admin/reservas/huecos-disponibles', {actividad_id: actividadId, fecha: fecha}, function(huecos) {
                 if (Array.isArray(huecos)) {
                   huecos.forEach(function(hueco) {
-                    huecoSelect.innerHTML += `<option value="${hueco.id}">${hueco.hora_inicio} - ${hueco.hora_fin}</option>`;
+                    huecoSelect.append('<option value="'+hueco+'">'+hueco+'</option>');
                   });
                   huecoSelect.disabled = false;
                 }
@@ -646,178 +705,214 @@
             });
           }
         });
-      });
-    </script>
-    @stack('scripts')
-    @livewireScripts
 
-    <!-- Gemini Chatbot Flotante -->
-    <button id="chatbot-fab" type="button">
-      <i class="fas fa-robot"></i>
-    </button>
-    <div id="chatbot-window">
-      <div id="chatbot-header">
-        <span>Gemini Chat</span>
-        <button id="chatbot-close" type="button">&times;</button>
-      </div>
-      <div id="chatbot-messages"></div>
-      <form id="chatbot-form" autocomplete="off">
-        <input type="text" id="chatbot-message" name="message" placeholder="Escribe tu mensaje..." required autocomplete="off">
-        <button type="submit"><i class="fas fa-paper-plane"></i></button>
-      </form>
-    </div>
-    <style>
-    #chatbot-fab {
-      position: fixed;
-      bottom: 24px;
-      right: 90px; /* Separado del borde derecho para no tapar otros botones flotantes */
-      z-index: 9999;
-      background: #27ae60;
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 56px;
-      height: 56px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-      font-size: 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s;
-    }
-    #chatbot-fab:hover {
-      background: #219150;
-    }
-    #chatbot-window {
-      position: fixed;
-      bottom: 90px;
-      right: 90px;
-      width: 340px;
-      max-width: 98vw;
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-      z-index: 10000;
-      display: none;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    #chatbot-header {
-      background: #27ae60;
-      color: #fff;
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-weight: 600;
-    }
-    #chatbot-header button {
-      background: none;
-      border: none;
-      color: #fff;
-      font-size: 1.3rem;
-      cursor: pointer;
-    }
-    #chatbot-messages {
-      padding: 12px;
-      height: 260px;
-      max-height: 260px;
-      overflow-y: auto;
-      background: #f7f7f7;
-      font-size: 0.98rem;
-    }
-    #chatbot-messages .msg-user {
-      text-align: right;
-      margin-bottom: 6px;
-      color: #333;
-    }
-    #chatbot-messages .msg-bot {
-      text-align: left;
-      margin-bottom: 6px;
-      color: #27ae60;
-    }
-    #chatbot-form {
-      display: flex;
-      border-top: 1px solid #eee;
-      background: #fff;
-    }
-    #chatbot-form input[type="text"] {
-      flex: 1;
-      border: none;
-      padding: 10px;
-      font-size: 1rem;
-      outline: none;
-    }
-    #chatbot-form button {
-      background: #27ae60;
-      color: #fff;
-      border: none;
-      padding: 0 18px;
-      font-size: 1.2rem;
-      border-radius: 0 0 14px 0;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    #chatbot-form button:hover {
-      background: #219150;
-    }
-    @media (max-width: 600px) {
-      #chatbot-window {
-        right: 80px;
-        width: 98vw;
-        min-width: 0;
-        bottom: 80px;
-      }
-      #chatbot-fab {
-        right: 80px;
-        bottom: 16px;
-      }
-    }
-    </style>
-    <script>
-    (function(){
-      const fab = document.getElementById('chatbot-fab');
-      const windowEl = document.getElementById('chatbot-window');
-      const closeBtn = document.getElementById('chatbot-close');
-      const form = document.getElementById('chatbot-form');
-      const input = document.getElementById('chatbot-message');
-      const messages = document.getElementById('chatbot-messages');
+        // Actualiza el contador del carrito en el header
+        window.actualizarContadorCarrito = function() {
+            var badge = $("#carrito-badge");
+            $.get("{{ route('carrito.contador') }}", function(data) {
+                if (data.count > 0) {
+                    badge.text(data.count).show();
+                } else {
+                    badge.text('').hide();
+                }
+            });
+        }
 
-      fab.addEventListener('click', function() {
-        windowEl.style.display = 'flex';
-        input.focus();
-      });
-      closeBtn.addEventListener('click', function() {
-        windowEl.style.display = 'none';
-        messages.innerHTML = '';
-        input.value = '';
-      });
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const msg = input.value.trim();
-        if (!msg) return;
-        messages.innerHTML += `<div class='msg-user'>${msg}</div>`;
-        input.value = '';
-        messages.scrollTop = messages.scrollHeight;
-        fetch("{{ route('chatbot.ask') }}", {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-          },
-          body: JSON.stringify({ message: msg })
-        })
-        .then(res => res.json())
-        .then(data => {
-          messages.innerHTML += `<div class='msg-bot'>${data.answer}</div>`;
-          messages.scrollTop = messages.scrollHeight;
-        })
-        .catch(() => {
-          messages.innerHTML += `<div class='msg-bot'>Error al conectar con Gemini</div>`;
-          messages.scrollTop = messages.scrollHeight;
+        // --- GLOBAL: actualizarVistaCarrito ---
+        window.actualizarVistaCarrito = function(data) {
+          // Actualiza en la página principal
+          if ($('#carrito-contenido').length) {
+            if (data.html !== undefined) {
+              $('#carrito-contenido').html(data.html);
+            }
+            if (data.tfoot !== undefined) {
+              $('#carrito-tfoot').html(data.tfoot);
+            }
+            if (data.empty !== undefined) {
+              if (data.empty) {
+                $('.table').hide();
+                if ($('#carrito-vacio-msg').length === 0) {
+                  $('<div id="carrito-vacio-msg" class="alert alert-info mt-3">Tu carrito está vacío.</div>').insertAfter('.table');
+                }
+              } else {
+                $('.table').show();
+                $('#carrito-vacio-msg').remove();
+              }
+            }
+          }
+          // Actualiza en el modal si está abierto
+          if ($('#modalAccion').hasClass('show')) {
+            var modalBody = $('#modalAccion .modal-body');
+            if (modalBody.find('#carrito-contenido').length) {
+              if (data.html !== undefined) {
+                modalBody.find('#carrito-contenido').html(data.html);
+              }
+              if (data.tfoot !== undefined) {
+                modalBody.find('#carrito-tfoot').html(data.tfoot);
+              }
+              if (data.empty !== undefined) {
+                if (data.empty) {
+                  modalBody.find('.table').hide();
+                  if (modalBody.find('#carrito-vacio-msg').length === 0) {
+                    $('<div id="carrito-vacio-msg" class="alert alert-info mt-3">Tu carrito está vacío.</div>').insertAfter(modalBody.find('.table'));
+                  }
+                } else {
+                  modalBody.find('.table').show();
+                  modalBody.find('#carrito-vacio-msg').remove();
+                }
+              }
+            }
+          }
+        }
+        // Llamar a la función al cargar la página para establecer el contador inicial
+        window.actualizarContadorCarrito();
+
+        // Ejemplo de uso: después de agregar un producto al carrito via AJAX, llamar a la función para actualizar el contador
+        $(document).on('submit', 'form[id^="form-agregar-carrito-"]', function(e) {
+          e.preventDefault();
+          var form = $(this);
+          var url = form.attr('action');
+          var method = form.attr('method') || 'POST';
+          var formData = new FormData(this);
+          $.ajax({
+            url: url,
+            type: method,
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function(resp) {
+              if (resp.success) {
+                // Actualizar contador del carrito
+                window.actualizarContadorCarrito();
+                // Opcional: mostrar mensaje de éxito o actualizar vista del carrito
+                $('<div class="alert alert-success mt-3">Producto agregado al carrito.</div>').insertBefore('table.table-reservas-admin').delay(2500).fadeOut(500, function(){$(this).remove();});
+              } else if (resp.error) {
+                alert(resp.error);
+              }
+            },
+            error: function(xhr) {
+              alert('Error al agregar el producto al carrito.');
+            }
+          });
         });
       });
-    })();
     </script>
+    <script>
+// LÓGICA GLOBAL: Añadir al carrito (funciona en página y en modal)
+$(document).on('click', '.add-to-cart-btn', function(e) {
+  e.preventDefault();
+  const btn = this;
+  const productoId = $(btn).data('producto-id');
+  fetch('/carrito/agregar', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    },
+    body: JSON.stringify({ producto_id: productoId, cantidad: 1 })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      if (typeof window.actualizarContadorCarrito === 'function') {
+        window.actualizarContadorCarrito();
+      }
+      // Feedback visual en el botón
+      btn.classList.add('btn-success');
+      btn.classList.remove('btn-primary');
+      btn.innerHTML = '<i class="fas fa-check"></i> Añadido';
+      setTimeout(() => {
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-primary');
+        btn.innerHTML = '<i class="fas fa-cart-plus"></i> Añadir al carrito';
+      }, 1200);
+      // --- NUEVO: actualizar carrito en la vista si está presente ---
+      window.actualizarVistaCarrito(data);
+    } else {
+      alert(data.message || 'Error al añadir al carrito');
+    }
+  })
+  .catch(() => alert('Error al añadir al carrito'));
+});
+</script>
+<script>
+// LÓGICA GLOBAL: Actualizar cantidad en carrito (funciona en página y modal)
+$(document).on('change', '.input-cantidad-carrito', function(e) {
+  e.preventDefault();
+  const input = this;
+  const id = $(input).data('carrito-id');
+  const cantidad = parseInt($(input).val(), 10);
+  if (!id || isNaN(cantidad) || cantidad < 1) return;
+  fetch('/carrito/modificar/' + id, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    },
+    body: JSON.stringify({ cantidad })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      if (typeof window.actualizarContadorCarrito === 'function') {
+        window.actualizarContadorCarrito();
+      }
+      // Feedback visual
+      $(input).addClass('is-valid');
+      setTimeout(() => $(input).removeClass('is-valid'), 1000);
+      actualizarVistaCarrito(data);
+    } else {
+      alert(data.message || 'Error al actualizar el carrito');
+    }
+  })
+  .catch(() => alert('Error al actualizar el carrito'));
+});
+
+// LÓGICA GLOBAL: Eliminar producto del carrito (con modal de confirmación)
+let carritoIdAEliminar = null;
+let btnEliminarCarrito = null;
+$(document).on('click', '.btn-eliminar-carrito', function(e) {
+  e.preventDefault();
+  btnEliminarCarrito = this;
+  carritoIdAEliminar = $(btnEliminarCarrito).data('carrito-id');
+  const nombre = $(btnEliminarCarrito).data('nombre') || '';
+  // Personalizar mensaje si se desea
+  $('#confirmDeleteModal .modal-body').html('¿Está seguro de eliminar <b>' + nombre + '</b> del carrito?');
+  $('#confirmDeleteModal').modal('show');
+});
+$('#btnConfirmDelete').off('click.carrito').on('click.carrito', function() {
+  if (!carritoIdAEliminar) return;
+  var url = '/carrito/eliminar/' + carritoIdAEliminar;
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({}) // <-- Importante para Laravel
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      if (typeof window.actualizarContadorCarrito === 'function') {
+        window.actualizarContadorCarrito();
+      }
+      actualizarVistaCarrito(data);
+      $('#confirmDeleteModal').modal('hide');
+    } else {
+      alert(data.message || 'Error al eliminar del carrito');
+    }
+  })
+  .catch(() => {
+    alert('Error al eliminar del carrito');
+  });
+  carritoIdAEliminar = null;
+  btnEliminarCarrito = null;
+});
+</script>
+  @yield('scripts')
+  @stack('scripts')
   </body>
 </html>

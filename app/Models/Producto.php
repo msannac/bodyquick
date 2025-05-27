@@ -20,6 +20,12 @@ class Producto extends Model
         return $this->belongsToMany(User::class, 'carrito', 'producto_id', 'user_id');
     }
 
+    // Un producto puede estar en muchas líneas de pedido
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class, 'producto_id');
+    }
+
     // Accessor para IVA (21% del precio)
     public function getIvaAttribute($value)
     {

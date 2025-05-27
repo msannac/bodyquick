@@ -1,7 +1,7 @@
 <h2 class="mb-4"><i class="fas fa-store"></i> Productos</h2>
 <div class="row">
   @foreach($productos as $producto)
-    <div class="col-12 col-md-4 mb-4">
+    <div class="col-12 col-sm-6 col-md-3 mb-4">
       <div class="card small-card">
         <div class="circle-img-wrapper">
           @if($producto->foto)
@@ -15,6 +15,9 @@
           <p class="card-text mb-2">{{ $producto->descripcion }}</p>
           <p class="card-text mb-2">Precio: <strong>{{ number_format($producto->precio, 2) }} €</strong></p>
           <p class="card-text mb-2">IVA (21%): <strong>{{ number_format($producto->iva, 2) }} €</strong></p>
+          <button class="btn btn-primary btn-sm mt-2 add-to-cart-btn" data-producto-id="{{ $producto->id }}">
+            <i class="fas fa-cart-plus"></i> Añadir al carrito
+          </button>
         </div>
       </div>
     </div>
@@ -69,5 +72,14 @@
     position: relative;
     z-index: 1;
     overflow: hidden;
+  }
+  /* Si este listado se muestra en un modal, forzamos el ancho máximo del modal para que las cards sean más cuadradas */
+  .modal-dialog {
+    max-width: 1200px !important;
+  }
+  @media (max-width: 1300px) {
+    .modal-dialog {
+      max-width: 98vw !important;
+    }
   }
 </style>

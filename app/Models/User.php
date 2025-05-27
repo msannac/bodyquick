@@ -91,4 +91,10 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Producto::class, 'carrito', 'user_id', 'producto_id');
     }
+
+    // Un usuario tiene muchos pedidos
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

@@ -8,6 +8,7 @@ use App\Models\Actividad;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 
 class CitaController extends Controller
 {
@@ -63,9 +64,11 @@ class CitaController extends Controller
     /**
      * Muestra el formulario para crear una nueva cita.
      */
-    public function crear()
+    public function crear(Request $request)
     {
-        return view('Admin.Citas.crear');
+        $actividades = \App\Models\Actividad::all();
+        // Siempre devolver la vista crear.blade.php, tanto para AJAX como normal
+        return view('Admin.Citas.crear', compact('actividades'));
     }
 
     /**
@@ -74,12 +77,16 @@ class CitaController extends Controller
     public function almacenar(Request $request)
     {
         if ($request->has('masiva') && $request->masiva == 1) {
-            // Validación para creación masiva (sin cliente_id)
+            // Ignorar campos individuales si llegan por error
+            $request->merge([
+                'fecha' => null,
+                'hueco' => null,
+                'hora_inicio' => null,
+                'frecuencia_individual' => null,
+            ]);
             $data = $request->validate([
                 'actividad_id'  => 'required|exists:actividades,id',
-                'hueco'         => 'required|string',
                 'aforo'         => 'required|integer',
-                'hora_inicio'   => 'required',
                 'duracion'      => 'required|integer',
                 'frecuencia'    => 'required|in:diaria,semanal,mensual',
                 'fecha_inicio'  => 'required|date',
@@ -89,27 +96,66 @@ class CitaController extends Controller
             $fechaInicio = \Carbon\Carbon::parse($data['fecha_inicio']);
             $fechaFin = \Carbon\Carbon::parse($data['fecha_fin']);
             $incremento = [
-                'diaria'   => \Carbon\CarbonInterval::day(),
-                'semanal'  => \Carbon\CarbonInterval::week(),
-                'mensual'  => \Carbon\CarbonInterval::month(),
+                'diaria'   => \Carbon\CarbonInterval::days(1),
+                'semanal'  => \Carbon\CarbonInterval::weeks(1),
+                'mensual'  => \Carbon\CarbonInterval::months(1),
             ][$data['frecuencia']];
 
+            $actividad = \App\Models\Actividad::find($data['actividad_id']);
+            if (!$actividad) {
+                return redirect()->back()->withErrors(['actividad_id' => 'Actividad no encontrada']);
+            }
+            $duracion = (int) $data['duracion'];
+
+            $horarios = [
+                ['inicio' => '07:00', 'fin' => '13:00'],
+                ['inicio' => '17:00', 'fin' => '21:00'],
+            ];
+
+            // Calcular cuántas citas se crearán (estimación)
+            $totalCitas = 0;
+            for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin); $fecha->add($incremento)) {
+                foreach ($horarios as $horario) {
+                    $inicio = \Carbon\Carbon::createFromFormat('H:i', $horario['inicio']);
+                    $fin = \Carbon\Carbon::createFromFormat('H:i', $horario['fin']);
+                    while ($inicio->copy()->addMinutes($duracion)->lte($fin)) {
+                        $totalCitas++;
+                        $inicio = $inicio->addMinutes($duracion)->clone();
+                    }
+                }
+            }
+            $maxCitas = 5000;
+            if ($totalCitas > $maxCitas) {
+                return redirect()->back()->withErrors(['masiva' => 'Demasiadas citas a crear de golpe ('.$totalCitas.'). Reduce el rango de fechas o ajusta la duración. Máximo permitido: '.$maxCitas]);
+            }
+
+            // Crear citas
             $citasCreadas = 0;
             for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin); $fecha->add($incremento)) {
-                Cita::create([
-                    'fecha'         => $fecha->toDateString(),
-                    'hueco'         => $data['hueco'],
-                    'aforo'         => $data['aforo'],
-                    'hora_inicio'   => $data['hora_inicio'],
-                    'duracion'      => $data['duracion'],
-                    'frecuencia'    => $data['frecuencia'],
-                    'actividad_id'  => $data['actividad_id'],
-                ]);
-                $citasCreadas++;
+                foreach ($horarios as $horario) {
+                    $inicio = \Carbon\Carbon::createFromFormat('H:i', $horario['inicio']);
+                    $fin = \Carbon\Carbon::createFromFormat('H:i', $horario['fin']);
+                    while ($inicio->copy()->addMinutes($duracion)->lte($fin)) {
+                        $hueco_inicio = $inicio->format('H:i');
+                        $hueco_fin = $inicio->copy()->addMinutes($duracion)->format('H:i');
+                        $hueco = $hueco_inicio . ' - ' . $hueco_fin;
+                        \App\Models\Cita::create([
+                            'fecha'         => $fecha->format('Y-m-d'),
+                            'hueco'         => $hueco,
+                            'aforo'         => $data['aforo'],
+                            'hora_inicio'   => $hueco_inicio,
+                            'duracion'      => $duracion,
+                            'frecuencia'    => $data['frecuencia'],
+                            'actividad_id'  => $data['actividad_id'],
+                        ]);
+                        $citasCreadas++;
+                        $inicio = $inicio->addMinutes($duracion)->clone();
+                    }
+                }
             }
 
             return redirect()->route('admin.citas.listar')
-                             ->with('status', $citasCreadas.' citas creadas correctamente (modo masivo).');
+                             ->with('status', $citasCreadas.' citas creadas correctamente (modo masivo, todos los huecos).');
         } else {
             // Validación para creación individual (sin cliente_id)
             $data = $request->validate([
@@ -141,10 +187,129 @@ class CitaController extends Controller
     }
 
     /**
+     * Muestra el formulario para crear citas de forma masiva.
+     */
+    public function crearMasiva()
+    {
+        $actividades = \App\Models\Actividad::all();
+        return view('Admin.Citas.crear_masiva', compact('actividades'));
+    }
+
+    /**
+     * Almacena citas de forma masiva en la base de datos.
+     */
+    public function almacenarMasiva(Request $request)
+    {
+        $data = $request->validate([
+            'actividad_id'  => 'required|exists:actividades,id',
+            'aforo'         => 'required|integer',
+            'duracion'      => 'required|integer',
+            'frecuencia'    => 'required|in:una_vez,cada_semana,cada_mes',
+            'fecha_inicio'  => 'required|date',
+            'fecha_fin'     => 'required|date|after_or_equal:fecha_inicio',
+        ]);
+
+        $fechaInicio = \Carbon\Carbon::parse($data['fecha_inicio']);
+        $fechaFin = \Carbon\Carbon::parse($data['fecha_fin']);
+        $incrementos = [
+            'una_vez'     => \Carbon\CarbonInterval::days(1),
+            'cada_semana' => \Carbon\CarbonInterval::weeks(1),
+            'cada_mes'    => \Carbon\CarbonInterval::months(1),
+        ];
+        $frecuenciaRecibida = trim((string) $data['frecuencia']);
+        $incremento = $incrementos[$frecuenciaRecibida] ?? null;
+        if (!$incremento || !($incremento instanceof \DateInterval)) {
+            Log::error('Incremento inválido en creación masiva de citas', [
+                'frecuencia_recibida' => $frecuenciaRecibida,
+                'data' => $data,
+                'incremento' => $incremento,
+                'tipo_incremento' => gettype($incremento)
+            ]);
+            if ($request->expectsJson()) {
+                return response()->json(['error' => 'Frecuencia inválida: ' . $frecuenciaRecibida], 422);
+            }
+            return redirect()->back()->withErrors(['frecuencia' => 'Frecuencia inválida: ' . $frecuenciaRecibida]);
+        }
+
+        $actividad = \App\Models\Actividad::find($data['actividad_id']);
+        if (!$actividad) {
+            if ($request->expectsJson()) {
+                return response()->json(['error' => 'Actividad no encontrada'], 422);
+            }
+            return redirect()->back()->withErrors(['actividad_id' => 'Actividad no encontrada']);
+        }
+        $duracion = (int) $data['duracion'];
+
+        $horarios = [
+            ['inicio' => '07:00', 'fin' => '13:00'],
+            ['inicio' => '17:00', 'fin' => '21:00'],
+        ];
+
+        Log::info('DEBUG masiva: frecuencia, incremento y data', [
+            'frecuencia_recibida' => $frecuenciaRecibida,
+            'incremento' => $incremento,
+            'tipo_incremento' => gettype($incremento),
+            'data' => $data
+        ]);
+
+        // Calcular cuántas citas se crearán (estimación)
+        $totalCitas = 0;
+        for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin); $fecha->add($incremento)) {
+            foreach ($horarios as $horario) {
+                $inicio = \Carbon\Carbon::createFromFormat('H:i', $horario['inicio']);
+                $fin = \Carbon\Carbon::createFromFormat('H:i', $horario['fin']);
+                while ($inicio->copy()->addMinutes($duracion)->lte($fin)) {
+                    $totalCitas++;
+                    $inicio = $inicio->addMinutes($duracion)->clone();
+                }
+            }
+        }
+        $maxCitas = 5000;
+        if ($totalCitas > $maxCitas) {
+            if ($request->expectsJson()) {
+                return response()->json(['error' => 'Demasiadas citas a crear de golpe ('.$totalCitas.'). Reduce el rango de fechas o ajusta la duración. Máximo permitido: '.$maxCitas], 422);
+            }
+            return redirect()->back()->withErrors(['masiva' => 'Demasiadas citas a crear de golpe ('.$totalCitas.'). Reduce el rango de fechas o ajusta la duración. Máximo permitido: '.$maxCitas]);
+        }
+
+        // Crear citas
+        $citasCreadas = 0;
+        for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin); $fecha->add($incremento)) {
+            foreach ($horarios as $horario) {
+                $inicio = \Carbon\Carbon::createFromFormat('H:i', $horario['inicio']);
+                $fin = \Carbon\Carbon::createFromFormat('H:i', $horario['fin']);
+                while ($inicio->copy()->addMinutes($duracion)->lte($fin)) {
+                    $hueco_inicio = $inicio->format('H:i');
+                    $hueco_fin = $inicio->copy()->addMinutes($duracion)->format('H:i');
+                    $hueco = $hueco_inicio . ' - ' . $hueco_fin;
+                    \App\Models\Cita::create([
+                        'fecha'         => $fecha->format('Y-m-d'),
+                        'hueco'         => $hueco,
+                        'aforo'         => $data['aforo'],
+                        'hora_inicio'   => $hueco_inicio,
+                        'duracion'      => $duracion,
+                        'frecuencia'    => $data['frecuencia'],
+                        'actividad_id'  => $data['actividad_id'],
+                    ]);
+                    $citasCreadas++;
+                    $inicio = $inicio->addMinutes($duracion)->clone();
+                }
+            }
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'mensaje' => $citasCreadas.' citas creadas correctamente (modo masivo, todos los huecos).']);
+        }
+        return redirect()->route('admin.citas.listar')
+                         ->with('status', $citasCreadas.' citas creadas correctamente (modo masivo, todos los huecos).');
+    }
+
+    /**
      * Muestra el formulario para editar una cita existente.
      */
-    public function editar(Cita $cita)
+    public function editar(Request $request, Cita $cita)
     {
+        // Siempre devolver la vista editar.blade.php, tanto para AJAX como normal
         return view('Admin.Citas.editar', compact('cita'));
     }
 
@@ -220,8 +385,7 @@ class CitaController extends Controller
             }
         }
 
-        // Opcional: filtrar huecos ocupados (si hay reservas/citas en ese horario)
-        // ...
+        
 
         return response()->json($huecos);
     }

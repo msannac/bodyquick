@@ -47,10 +47,14 @@
           <h1 class="mb-0"><i class="fa-solid fa-list"></i> Listado de Citas</h1>
           <!-- Botón Crear: se abre el modal vía AJAX -->
           <a href="{{ route('admin.citas.crear') }}" 
-             class="btn btn-success ml-3 inline-button abrirModal" 
+             class="btn btn-success ml-3 inline-button abrirModal"
              data-url="{{ route('admin.citas.crear') }}">
             <i class="fas fa-plus"></i>
           </a>
+          <!-- Botón Crear Masiva: solo icono -->
+          <button type="button" class="btn btn-warning ml-2 inline-button" style="color: #fff; font-weight:600;" data-toggle="modal" data-target="#modalCrearCitaMasiva" title="Crear Citas Masivas">
+            <i class="fas fa-layer-group"></i>
+          </button>
         </div>
         
         <!-- Filtros -->
@@ -152,6 +156,9 @@
     </div>
   </div>
 </div>
+
+@include('Admin.Citas.crear_masiva')
+
 @endsection
 
 <!-- Estilos personalizados -->

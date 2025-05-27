@@ -1,3 +1,4 @@
+<tfoot id="carrito-tfoot">
 @php $total = 0; @endphp
 @foreach($carrito as $item)
     @php
@@ -10,3 +11,4 @@
     <th colspan="4" class="text-right">Total:</th>
     <th colspan="2">{{ number_format($total, 2) }} €</th>
 </tr>
+</tfoot>

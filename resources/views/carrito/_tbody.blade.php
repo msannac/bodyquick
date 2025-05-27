@@ -1,3 +1,4 @@
+<tbody id="carrito-contenido">
 @php $total = 0; @endphp
 @foreach($carrito as $item)
     @php
@@ -18,3 +19,4 @@
         </td>
     </tr>
 @endforeach
+</tbody>

@@ -868,15 +868,29 @@ $('#btnConfirmDelete').off('click.carrito').on('click.carrito', function() {
 <script>
     // --- FUNCIÓN GLOBAL: Actualizar la vista del carrito (modal o página) ---
     window.actualizarVistaCarrito = function(data) {
+      // --- DEPURACIÓN: log de entrada ---
+      console.log('[Carrito] actualizarVistaCarrito llamada', data);
+      // Si el backend indica que el carrito está vacío, recarga el modal completo
+      if (data && data.empty === true && $('#modalAccion .modal-body').length) {
+        console.log('[Carrito] Carrito vacío, recargando modal completo');
+        $.get('/carrito', function(htmlCompleto) {
+          $('#modalAccion .modal-body').html(htmlCompleto);
+        }).fail(function(){
+          $('#modalAccion .modal-body').html('<div class="alert alert-danger">No se pudo recargar el carrito. Por favor, recarga la página.</div>');
+        });
+        return;
+      }
       // Si hay HTML de carrito y el modal está abierto, actualiza SOLO el tbody/tfoot si la tabla existe
       if (data && data.html && $('#modalAccion .modal-body').length) {
         // Previene inyectar accidentalmente otro modal dentro del modal global
         if (typeof data.html === 'string' && (data.html.includes('modal') || data.html.includes('loginModal'))) {
+          console.warn('[Carrito] ¡Intento de inyectar modal dentro de modal!');
           $('#modalAccion .modal-body').html('<div class="alert alert-danger">Error: Se intentó cargar un modal dentro de otro. Por favor, recarga la página.</div>');
           return;
         }
         // Si detecta formulario de login, muestra aviso de sesión expirada
-        if (typeof data.html === 'string' && data.html.includes('id="loginModal"')) {
+        if (typeof data.html === 'string' && data.html.includes('id=\"loginModal\"')) {
+          console.warn('[Carrito] ¡HTML de login detectado!');
           $('#modalAccion').modal('hide');
           alert('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
           $('#loginModal').modal('show');
@@ -884,15 +898,44 @@ $('#btnConfirmDelete').off('click.carrito').on('click.carrito', function() {
         }
         var $tabla = $('#modalAccion .modal-body table');
         if ($tabla.length) {
-          // Actualiza solo el tbody y tfoot si existen
-          if ($tabla.find('tbody#carrito-contenido').length) {
-            $tabla.find('tbody#carrito-contenido').replaceWith(data.html);
+          // --- Eliminar duplicados antes de reemplazar ---
+          $tabla.find('tbody#carrito-contenido').not(':first').remove();
+          $tabla.find('tfoot#carrito-tfoot').not(':first').remove();
+          // Limpia event listeners de botones del carrito antes de reemplazar
+          $tabla.find('.btn-eliminar-carrito').off();
+          $tabla.find('.input-cantidad-carrito').off();
+          // Reemplaza el elemento tbody completo
+          var $tbody = $tabla.find('tbody#carrito-contenido');
+          if ($tbody.length) {
+            $tbody.replaceWith(data.html);
+            console.log('[Carrito] tbody reemplazado');
+          } else {
+            console.warn('[Carrito] tbody#carrito-contenido no encontrado');
           }
-          if (data.tfoot && $tabla.find('tfoot#carrito-tfoot').length) {
-            $tabla.find('tfoot#carrito-tfoot').replaceWith(data.tfoot);
+          // Reemplaza el elemento tfoot completo
+          if (data.tfoot) {
+            var $tfoot = $tabla.find('tfoot#carrito-tfoot');
+            if ($tfoot.length) {
+              $tfoot.replaceWith(data.tfoot);
+              console.log('[Carrito] tfoot reemplazado');
+            } else {
+              console.warn('[Carrito] tfoot#carrito-tfoot no encontrado');
+            }
           }
+          // --- Eliminar cualquier duplicado tras el reemplazo ---
+          $tabla.find('tbody#carrito-contenido').not(':first').remove();
+          $tabla.find('tfoot#carrito-tfoot').not(':first').remove();
+          // Fallback: si tras el reemplazo no existe el botón de checkout, recarga el modal completo
+          setTimeout(function() {
+            if ($('#modalAccion .modal-body #btnCheckout').length === 0) {
+              console.warn('[Carrito] No se encontró #btnCheckout tras actualizar, recargando modal completo');
+              $.get('/carrito', function(htmlCompleto) {
+                $('#modalAccion .modal-body').html(htmlCompleto);
+              });
+            }
+          }, 100);
         } else {
-          // Si no hay tabla (carrito vacío o estructura perdida), recarga el modal completo vía AJAX
+          console.warn('[Carrito] Tabla de carrito no encontrada, recargando modal completo');
           $.get('/carrito', function(htmlCompleto) {
             $('#modalAccion .modal-body').html(htmlCompleto);
           }).fail(function(){
@@ -956,6 +999,81 @@ $('#btnConfirmDelete').off('click.carrito').on('click.carrito', function() {
       });
     });
     </script>
+
+    <!-- Botón flotante de Chatbot Gemini -->
+    <button id="btnChatbotGemini" style="position: fixed; bottom: 30px; right: 30px; z-index: 1052; background: #fff; border: 2px solid #00a65a; color: #00a65a; border-radius: 50%; width: 60px; height: 60px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+      <i class="fas fa-robot"></i>
+    </button>
+    <!-- Modal Chatbot Gemini -->
+    <div class="modal fade" id="modalChatbotGemini" tabindex="-1" role="dialog" aria-labelledby="modalChatbotGeminiLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalChatbotGeminiLabel"><i class="fas fa-robot text-success"></i> Asistente Bodyquick</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" style="min-height:200px; max-height:350px; overflow-y:auto;">
+            <div id="chatbot-messages" style="font-size: 1rem;"></div>
+            <form id="chatbot-form" class="mt-3">
+              <div class="input-group">
+                <input type="text" class="form-control" id="chatbot-input" placeholder="Escribe tu pregunta..." autocomplete="off" required>
+                <div class="input-group-append">
+                  <button class="btn btn-success" type="submit"><i class="fas fa-paper-plane"></i></button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+    $(function(){
+      // Mostrar modal al hacer click en el botón flotante
+      $('#btnChatbotGemini').on('click', function(){
+        $('#modalChatbotGemini').modal('show');
+      });
+      // Enviar mensaje al chatbot
+      $('#chatbot-form').on('submit', function(e){
+        e.preventDefault();
+        var input = $('#chatbot-input');
+        var msg = input.val().trim();
+        if(!msg) return;
+        var messages = $('#chatbot-messages');
+        messages.append('<div class="text-right mb-2"><span class="badge badge-success">Tú:</span> '+$('<div>').text(msg).html()+'</div>');
+        input.val('');
+        messages.append('<div class="mb-2"><span class="badge badge-secondary">Bodyquick:</span> <span class="text-muted"><i class="fas fa-spinner fa-spin"></i> Pensando...</span></div>');
+        messages.scrollTop(messages[0].scrollHeight);
+        $.ajax({
+          url: '/chatbot/ask',
+          method: 'POST',
+          data: { message: msg, _token: $('meta[name="csrf-token"]').attr('content') },
+          success: function(resp){
+            messages.find('.fa-spinner').closest('div').remove();
+            // Eliminar TODAS las etiquetas HTML y entidades, y mostrar saltos de línea
+            var safeAnswer = resp.answer
+              .replace(/<[^>]*>/g, '') // elimina cualquier etiqueta html
+              .replace(/&[a-zA-Z0-9#]+;/g, '') // elimina entidades html
+              .replace(/\n/g, '<br>'); // muestra saltos de línea
+            messages.append('<div class="mb-2"><span class="badge badge-secondary">Bodyquick:</span> ' + safeAnswer + '</div>');
+            messages.scrollTop(messages[0].scrollHeight);
+          },
+          error: function(){
+            messages.find('.fa-spinner').closest('div').remove();
+            messages.append('<div class="mb-2 text-danger"><span class="badge badge-secondary">Bodyquick:</span> Error al responder. Intenta de nuevo.</div>');
+            messages.scrollTop(messages[0].scrollHeight);
+          }
+        });
+      });
+      // Limpiar mensajes al abrir el modal
+      $('#modalChatbotGemini').on('show.bs.modal', function(){
+        $('#chatbot-messages').html('<div class="mb-2 text-muted">¡Hola! Soy tu asistente Bodyquick. ¿En qué puedo ayudarte?</div>');
+        $('#chatbot-input').val('');
+      });
+    });
+    </script>
+    <!-- Fin Chatbot Gemini -->
   @yield('scripts')
   @stack('scripts')
   </body>

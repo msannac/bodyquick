@@ -159,36 +159,34 @@ class CarritoController extends Controller
         if (!Auth::check()) {
             return response()->json([
                 'success' => false,
-                'session_expired' => true,
-                'message' => 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.'
-            ], 401);
+                'message' => 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.',
+                'session_expired' => true
+            ]);
         }
         Log::info('CarritoController@eliminar - INICIO', [
-            'user_id' => Auth::id(),
             'carrito_id' => $id,
         ]);
         $carrito = Carrito::where('id', $id)->where('user_id', Auth::id())->first();
         if (!$carrito) {
-            Log::warning('CarritoController@eliminar - Carrito no encontrado', ['carrito_id' => $id, 'user_id' => Auth::id()]);
-            return response()->json(['success' => false, 'message' => 'Producto no encontrado en el carrito'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Producto no encontrado en el carrito.'
+            ]);
         }
         $carrito->delete();
         Log::info('CarritoController@eliminar - Producto eliminado', ['carrito_id' => $id]);
         // Obtener el carrito actualizado
-        $carritoActualizado = Carrito::with('producto')
-            ->where('user_id', Auth::id())
-            ->get();
+        $carritoActualizado = Carrito::with('producto')->where('user_id', Auth::id())->get();
         // Renderizar el HTML actualizado del tbody y tfoot
         $tbody = view('carrito._tbody', ['carrito' => $carritoActualizado])->render();
         $tfoot = view('carrito._tfoot', ['carrito' => $carritoActualizado])->render();
-        // Si el carrito está vacío, enviar mensaje especial
         $empty = $carritoActualizado->isEmpty();
         Log::info('CarritoController@eliminar - Respuesta final', ['empty' => $empty]);
         return response()->json([
             'success' => true,
+            'empty' => $empty,
             'html' => $tbody,
-            'tfoot' => $tfoot,
-            'empty' => $empty
+            'tfoot' => $tfoot
         ]);
     }
 

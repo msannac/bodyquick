@@ -40,13 +40,13 @@ Route::middleware([
     'verified',
 ])->group(function () {
     // Ruta para el dashboard
-    Route::get('/admin.dashboard', function () {
+    /*Route::get('/admin.dashboard', function () {
         if (Auth::check() && !Auth::user()->is_admin) {
             return redirect()->route('cliente.reservas.index');
         }
         $dashboardController = app(App\Http\Controllers\Admin\DashboardController::class);
         return $dashboardController->index();
-    })->name('admin.dashboard');
+    })->name('admin.dashboard');*/
 
     // Rutas protegidas para el área administrativa usando la clase completa de middleware
     Route::middleware([AdminMiddleware::class])->group(function () {

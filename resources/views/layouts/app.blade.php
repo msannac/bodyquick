@@ -16,7 +16,7 @@
     <!-- Incluir Bootstrap Datepicker JS y CSS correctamente -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
     
-   <!-- @vite(['resources/css/app.css', 'resources/js/app.js']) -->
+    <!-- @vite(['resources/css/app.css', 'resources/js/app.js']) -->
     @livewireStyles
 
     <style>
@@ -29,6 +29,7 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
   }
   main {
     flex: 1 0 auto;
@@ -41,7 +42,37 @@
           background-color: #000;
            color: #ffffff;
       }
-     
+      header {
+        height: 70px;
+        min-height: 70px;
+        max-height: 70px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        width: 100%;
+        overflow: hidden;
+      }
+      /* Centrado vertical robusto para el header y sus hijos */
+header > .container,
+header > .container-fluid {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  /* Elimina posibles espacios colapsados */
+  gap: 0;
+}
+
+header img,
+header .d-flex.align-items-center > * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  vertical-align: middle;
+}
+
+/* Opcional: igualar el alto del logo y los botones para máxima simetría */
+header img {
+  height: 40px !important;
+  max-height: 40px !important;
+}
 
     </style>
     @stack('styles')
@@ -77,9 +108,10 @@
                 <span id="carrito-badge" class="badge badge-danger position-absolute{{ $carritoCount > 0 ? '' : ' d-none' }}" style="top:0; right:0; font-size:0.8rem">{{ $carritoCount > 0 ? $carritoCount : '' }}</span>
             </a>
             <a href="{{ route('logout') }}" class="btn -btn-logout"
-            style="background-color: red; border: 1px solid red; color: #ffffff; padding: 8px 15px; border-radius: 5px; text-decoration: none; margin-left: 15px;"
-               onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-              Cerrar Sesión
+               style="background-color: red; border: 1px solid red; color: #ffffff; padding: 8px 15px; border-radius: 5px; text-decoration: none; margin-left: 15px;"
+               onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+               title="Cerrar sesión">
+              <i class="fas fa-sign-out-alt"></i>
             </a>
             <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display:none;">
               @csrf
@@ -1074,6 +1106,22 @@ $('#btnConfirmDelete').off('click.carrito').on('click.carrito', function() {
     });
     </script>
     <!-- Fin Chatbot Gemini -->
+
+    <!-- Ajuste de posición del botón flotante del chatbot en móvil para evitar solapamiento con el botón Crear -->
+    <style>
+      @media (max-width: 576px) {
+  #btnChatbotGemini {
+    top: 70px !important; /* Más abajo para no solaparse con el header ni el botón Crear */
+    right: 100px !important;
+    left: auto !important; /* Suficiente para no solaparse con el botón Crear en móvil */
+  }
+  #btnFaq {
+    top: 80px !important; /* Más abajo para no solaparse con el header ni el botón Crear */
+    right: 40px !important;
+    left: auto !important;
+  }
+}
+    </style>
   @yield('scripts')
   @stack('scripts')
   </body>

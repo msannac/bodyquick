@@ -6,8 +6,8 @@
 <main class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-3 sidebar" style="background-color: #F4F4F4; min-height: calc(100vh - 140px); padding: 20px;">
-            <div class="title" style="font-size: 24px; color:  #000000; margin-bottom: 30px; display: flex; align-items: center;">
+        <div class="col-md-2 sidebar" style="background-color: #F4F4F4; min-height: 100vh; padding: 20px;">
+        <div class="title" style="font-size: 24px; color: #000; margin-bottom: 30px; display: flex; align-items: center;">
                 <i class="fas fa-user" style="margin-right: 10px; font-size: 28px; color:  #000000;"></i> Cliente
             </div>
             <div class="menu">
@@ -16,7 +16,7 @@
             </div>
         </div>
         <!-- Panel de Contenido -->
-        <div class="col-md-9">
+        <div class="col-12 col-md-10">
             <div class="container mt-4">
                 <div class="d-flex align-items-center">
                     <h1 class="mb-0"><i class="fa-solid fa-list"></i> Mis Citas Reservadas</h1>
@@ -81,7 +81,7 @@
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+   box-sizing: border-box;
   }
 
   /* Sidebar */

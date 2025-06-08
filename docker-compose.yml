@@ -3,10 +3,6 @@ services:
         build: .
         volumes:
             - .:/var/www/html
-        environment:
-            - DB_DATABASE=bodyquick
-            - DB_USERNAME=root
-            - DB_PASSWORD=
         command: sh -c "chmod -R 777 storage bootstrap/cache && php-fpm"
         restart: unless-stopped
 

@@ -313,24 +313,17 @@ header img {
       }
     });
         // Abrir cualquier modal AJAX with the class .abrirModal
-    $(document).off('click', '.abrirModal').on('click', '.abrirModal', function(e) {
-         e.preventDefault();
+        $(document).off('click', '.abrirModal').on('click', '.abrirModal', function(e) {
+          e.preventDefault();
           var url = $(this).data('url') || $(this).attr('href');
-            if (!url) return;
-        $.get(url)
-        .done(function(data) {
-          $('#modalAccion .modal-body').html(data);
-          $('#modalAccion').modal('show');
-    })
-        .fail(function(jqXHR) {
-          let msg = 'Error al cargar el contenido del modal.';
-            if (jqXHR.responseText) {
-          msg += '\nDetalles: ' + jqXHR.responseText;
-      }
-          alert(msg);
-            console.error('Error AJAX modal:', jqXHR);
-    });
-});
+          if (!url) return;
+          $.get(url, function(data) {
+            $('#modalAccion .modal-body').html(data);
+            $('#modalAccion').modal('show');
+          }).fail(function(){
+            alert('Error al cargar el contenido del modal.');
+          });
+        });
 
         // Botón Market para clientes y admin: abre el listado de productos en el modal
         $(document).on('click', '#btnMarket', function(e) {

@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
     
     <!-- @vite(['resources/css/app.css', 'resources/js/app.js']) -->
+    {{-- Elimina cualquier referencia a Vite para evitar el error de manifest --}}
     @livewireStyles
 
     <style>

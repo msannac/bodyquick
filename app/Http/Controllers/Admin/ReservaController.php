@@ -51,10 +51,9 @@ class ReservaController extends Controller
     {
             
         $citas = \App\Models\Cita::with('actividad')->orderBy('fecha')->get();
-        return $citas;
-        //$clientes = \App\Models\User::orderBy('name')->get();
-        //$actividades = \App\Models\Actividad::where('activo', true)->orderBy('nombre')->get();
-        //return view('Admin.Reservas.crear', compact('citas', 'clientes', 'actividades'));
+        $clientes = \App\Models\User::orderBy('name')->get();
+        $actividades = \App\Models\Actividad::where('activo', true)->orderBy('nombre')->get();
+        return view('Admin.Reservas.crear', compact('citas', 'clientes', 'actividades'));
     }
 
     // Guarda una nueva reserva

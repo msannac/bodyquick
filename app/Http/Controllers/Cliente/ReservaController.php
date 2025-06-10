@@ -81,7 +81,7 @@ class ReservaController extends Controller
             Mail::to($admin->email)->send(new ReservaCreadaAdminMail($reserva, $cita, $actividad, $cliente));
         }
 
-        return redirect()->route('Cliente.Reservas.index')
+        return redirect()->route('cliente.reservas.index')
                          ->with('status', 'Reserva creada correctamente');
     }
 
@@ -106,7 +106,7 @@ class ReservaController extends Controller
         $cita = $reserva->cita;
         $fechaHoraCita = \Carbon\Carbon::parse($cita->fecha . ' ' . $cita->hora_inicio);
         if (now()->diffInHours($fechaHoraCita, false) < 24) {
-            return redirect()->route('Cliente.Reservas.index')
+            return redirect()->route('cliente.reservas.index')
                 ->with('error', 'No puedes modificar una reserva con menos de 24 horas de antelación. Si tienes una urgencia, contacta con el centro.');
         }
 
@@ -168,7 +168,7 @@ class ReservaController extends Controller
             Mail::to($admin->email)->send(new ReservaActualizadaAdminMail($reserva, $cita, $actividad, $cliente));
         }
         
-        return redirect()->route('Cliente.Reservas.index')
+        return redirect()->route('cliente.reservas.index')
                          ->with('status', 'Reserva actualizada correctamente');
     }
 
@@ -183,7 +183,7 @@ class ReservaController extends Controller
         $cita = $reserva->cita;
         $fechaHoraCita = \Carbon\Carbon::parse($cita->fecha . ' ' . $cita->hora_inicio);
         if (now()->diffInHours($fechaHoraCita, false) < 24) {
-            return redirect()->route('Cliente.Reservas.index')
+            return redirect()->route('cliente.reservas.index')
                 ->with('error', 'No puedes anular una reserva con menos de 24 horas de antelación. Si tienes una urgencia, contacta con el centro.');
         }
 
@@ -213,7 +213,7 @@ class ReservaController extends Controller
             Mail::to($admin->email)->send(new ReservaAnuladaAdminMail($reserva, $cita, $actividad, $cliente));
         }
 
-        return redirect()->route('Cliente.Reservas.index')
+        return redirect()->route('cliente.reservas.index')
             ->with('status', 'Reserva anulada correctamente');
     }
 

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Reserva;
-use Illuminate\Support\Facades\Log;
+
 class ReservaController extends Controller
 {
     // Muestra el listado de reservas (con búsqueda AJAX por cliente, letras en cualquier orden, incluyendo apellidos)
@@ -47,15 +47,11 @@ class ReservaController extends Controller
     // Muestra el formulario de creación de reserva
     public function create()
     {
-        try {
-        $citas = \App\Models\Cita::with('actividad')->orderBy('fecha')->get();
-        $clientes = \App\Models\User::orderBy('name')->get();
-        $actividades = \App\Models\Actividad::where('activo', true)->orderBy('nombre')->get();
-        return view('admin.reservas.crear', compact('citas', 'clientes', 'actividades'));
-    } catch (\Exception $e) {
-        Log::error('Error en create reservas: '.$e->getMessage());
-        abort(500, 'Error en servidor: '.$e->getMessage());
-    }
+            return 'La ruta funciona correctamente';
+        //$citas = \App\Models\Cita::with('actividad')->orderBy('fecha')->get();
+        //$clientes = \App\Models\User::orderBy('name')->get();
+        //$actividades = \App\Models\Actividad::where('activo', true)->orderBy('nombre')->get();
+        //return view('Admin.Reservas.crear', compact('citas', 'clientes', 'actividades'));
     }
 
     // Guarda una nueva reserva

@@ -284,6 +284,12 @@ header img {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
     <script>
     $(document).ready(function(){
+      // Configurar el token CSRF para todas las peticiones AJAX
+    $.ajaxSetup({
+      headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+      }
+    });
       $('#btnFaq').on('click', function(e){
         e.preventDefault();
         var url = $(this).data('url');

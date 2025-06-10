@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Reserva;
-
+use App\Models\Actividad;
+use App\Models\Cita;
+use App\Models\User;
 class ReservaController extends Controller
 {
     // Muestra el listado de reservas (con búsqueda AJAX por cliente, letras en cualquier orden, incluyendo apellidos)

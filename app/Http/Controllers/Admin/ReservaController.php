@@ -49,11 +49,20 @@ class ReservaController extends Controller
     // Muestra el formulario de creación de reserva
     public function create()
     {
-            
-        $citas = \App\Models\Cita::with('actividad')->orderBy('fecha')->get();
-        $clientes = \App\Models\User::orderBy('name')->get();
-        $actividades = \App\Models\Actividad::where('activo', true)->orderBy('nombre')->get();
-        return view('Admin.Reservas.crear', compact('citas', 'clientes', 'actividades'));
+          try {
+        $citas = Cita::with('actividad')->orderBy('fecha')->get();
+        return response()->json($citas);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'error' => true,
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }  
+        //$citas = \App\Models\Cita::with('actividad')->orderBy('fecha')->get();
+        //$clientes = \App\Models\User::orderBy('name')->get();
+        //$actividades = \App\Models\Actividad::where('activo', true)->orderBy('nombre')->get();
+        //return view('Admin.Reservas.crear', compact('citas', 'clientes', 'actividades'));
     }
 
     // Guarda una nueva reserva

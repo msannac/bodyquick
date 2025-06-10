@@ -50,13 +50,17 @@ class ReservaController extends Controller
     public function create()
     {
         try {
-        $citas = \App\Models\Cita::orderBy('fecha')->get();  // SIN la relación 'actividad'
-        return response()->json($citas);
+        $citas = \App\Models\Cita::with('actividad')->orderBy('fecha')->get();
+        $clientes = \App\Models\User::orderBy('name')->get();
+        $actividades = \App\Models\Actividad::where('activo', true)->orderBy('nombre')->get();
+
+        return view('admin.reservas.crear', compact('citas', 'clientes', 'actividades'));
     } catch (\Throwable $e) {
         return response()->json([
             'error' => true,
             'message' => $e->getMessage(),
-        ]);
+            'trace' => $e->getTraceAsString()
+        ], 500);
     }
        
         //$citas = \App\Models\Cita::with('actividad')->orderBy('fecha')->get();

@@ -50,9 +50,8 @@ class ReservaController extends Controller
     public function create()
     {
         try {
-        // Prueba solo instanciar el modelo sin usarlo
-        $cita = new \App\Models\Cita;
-        return response()->json(['mensaje' => 'Modelo Cita existe']);
+        $citas = \App\Models\Cita::orderBy('fecha')->get();  // SIN la relación 'actividad'
+        return response()->json($citas);
     } catch (\Throwable $e) {
         return response()->json([
             'error' => true,

@@ -38,7 +38,7 @@ class ReservaController extends Controller
             $reservas = $query->get();
         }
         if ($request->ajax()) {
-            $tbody = view('admin.reservas.partials.tbody', compact('reservas'))->render();
+            $tbody = view('Admin.Reservas.partials.tbody', compact('reservas'))->render();
             return response()->json(['tbody' => $tbody]);
         }
         return view('Admin.Reservas.index', compact('reservas'));
@@ -67,7 +67,7 @@ class ReservaController extends Controller
 
         if ($request->ajax()) {
             $reservas = Reserva::with(['cita', 'cliente'])->orderByDesc('created_at')->get();
-            $tbody = view('admin.reservas.partials.tbody', compact('reservas'))->render();
+            $tbody = view('Admin.Reservas.partials.tbody', compact('reservas'))->render();
             return response()->json([
                 'success' => true,
                 'message' => 'Reserva creada correctamente',
@@ -102,7 +102,7 @@ class ReservaController extends Controller
 
         if ($request->ajax()) {
             $reservas = Reserva::with(['cita', 'cliente'])->orderByDesc('created_at')->get();
-            $tbody = view('admin.reservas.partials.tbody', compact('reservas'))->render();
+            $tbody = view('Admin.Reservas.partials.tbody', compact('reservas'))->render();
             return response()->json([
                 'success' => true,
                 'message' => 'Reserva actualizada correctamente',

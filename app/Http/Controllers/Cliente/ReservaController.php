@@ -26,13 +26,13 @@ class ReservaController extends Controller
         $reservas = Reserva::with('cita.actividad')
                     ->where('user_id', Auth::id())
                     ->get();
-        return view('cliente.reservas.index', compact('reservas'));
+        return view('Cliente.Reservas.index', compact('reservas'));
     }
 
     public function create()
     {
         $actividades = \App\Models\Actividad::where('activo', true)->get();
-        return view('cliente.reservas.nueva', compact('actividades'));
+        return view('Cliente.Reservas.nueva', compact('actividades'));
     }
 
     public function store(Request $request)
@@ -81,7 +81,7 @@ class ReservaController extends Controller
             Mail::to($admin->email)->send(new ReservaCreadaAdminMail($reserva, $cita, $actividad, $cliente));
         }
 
-        return redirect()->route('cliente.reservas.index')
+        return redirect()->route('Cliente.Reservas.index')
                          ->with('status', 'Reserva creada correctamente');
     }
 
@@ -92,7 +92,7 @@ class ReservaController extends Controller
             abort(403);
         }
         $actividades = Actividad::where('activo', true)->get();
-        return view('cliente.reservas.edit', compact('reserva', 'actividades'));
+        return view('Cliente.Reservas.edit', compact('reserva', 'actividades'));
     }
 
     public function update(Request $request, Reserva $reserva)
@@ -106,7 +106,7 @@ class ReservaController extends Controller
         $cita = $reserva->cita;
         $fechaHoraCita = \Carbon\Carbon::parse($cita->fecha . ' ' . $cita->hora_inicio);
         if (now()->diffInHours($fechaHoraCita, false) < 24) {
-            return redirect()->route('cliente.reservas.index')
+            return redirect()->route('Cliente.Reservas.index')
                 ->with('error', 'No puedes modificar una reserva con menos de 24 horas de antelación. Si tienes una urgencia, contacta con el centro.');
         }
 
@@ -168,7 +168,7 @@ class ReservaController extends Controller
             Mail::to($admin->email)->send(new ReservaActualizadaAdminMail($reserva, $cita, $actividad, $cliente));
         }
         
-        return redirect()->route('cliente.reservas.index')
+        return redirect()->route('Cliente.Reservas.index')
                          ->with('status', 'Reserva actualizada correctamente');
     }
 
@@ -183,7 +183,7 @@ class ReservaController extends Controller
         $cita = $reserva->cita;
         $fechaHoraCita = \Carbon\Carbon::parse($cita->fecha . ' ' . $cita->hora_inicio);
         if (now()->diffInHours($fechaHoraCita, false) < 24) {
-            return redirect()->route('cliente.reservas.index')
+            return redirect()->route('Cliente.Reservas.index')
                 ->with('error', 'No puedes anular una reserva con menos de 24 horas de antelación. Si tienes una urgencia, contacta con el centro.');
         }
 
@@ -213,7 +213,7 @@ class ReservaController extends Controller
             Mail::to($admin->email)->send(new ReservaAnuladaAdminMail($reserva, $cita, $actividad, $cliente));
         }
 
-        return redirect()->route('cliente.reservas.index')
+        return redirect()->route('Cliente.Reservas.index')
             ->with('status', 'Reserva anulada correctamente');
     }
 

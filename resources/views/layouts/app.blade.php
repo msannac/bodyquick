@@ -306,6 +306,12 @@ header img {
     </script>
     <script>
       $(document).ready(function(){
+        // Configurar el token CSRF para todas las peticiones AJAX
+    $.ajaxSetup({
+      headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+      }
+    });
         // Abrir cualquier modal AJAX with the class .abrirModal
         $(document).off('click', '.abrirModal').on('click', '.abrirModal', function(e) {
           e.preventDefault();

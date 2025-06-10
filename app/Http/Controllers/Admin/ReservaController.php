@@ -50,13 +50,13 @@ class ReservaController extends Controller
     public function create()
     {
         try {
-        // Solo prueba devolver un texto simple para ver si entra aquí
-        return response()->json(['mensaje' => 'Entró a create']);
+        // Prueba solo instanciar el modelo sin usarlo
+        $cita = new \App\Models\Cita;
+        return response()->json(['mensaje' => 'Modelo Cita existe']);
     } catch (\Throwable $e) {
         return response()->json([
             'error' => true,
             'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
         ]);
     }
        

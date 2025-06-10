@@ -41,7 +41,7 @@ class ReservaController extends Controller
             $tbody = view('admin.reservas.partials.tbody', compact('reservas'))->render();
             return response()->json(['tbody' => $tbody]);
         }
-        return view('admin.reservas.index', compact('reservas'));
+        return view('Admin.Reservas.index', compact('reservas'));
     }
 
     // Muestra el formulario de creación de reserva
@@ -50,7 +50,7 @@ class ReservaController extends Controller
         $citas = \App\Models\Cita::with('actividad')->orderBy('fecha')->get();
         $clientes = \App\Models\User::orderBy('name')->get();
         $actividades = \App\Models\Actividad::where('activo', true)->orderBy('nombre')->get();
-        return view('admin.reservas.crear', compact('citas', 'clientes', 'actividades'));
+        return view('Admin.Reservas.crear', compact('citas', 'clientes', 'actividades'));
     }
 
     // Guarda una nueva reserva
@@ -85,7 +85,7 @@ class ReservaController extends Controller
         $actividades = \App\Models\Actividad::where('activo', true)->orderBy('nombre')->get();
         // Obtener la cita actual de la reserva
         $citaActual = $reserva->cita;
-        return view('admin.reservas.editar', compact('reserva', 'clientes', 'actividades', 'citaActual'));
+        return view('Admin.Reservas.editar', compact('reserva', 'clientes', 'actividades', 'citaActual'));
     }
 
     // Actualiza una reserva existente

@@ -11,13 +11,13 @@ class ProductoController extends Controller
     public function listar()
     {
         $productos = Producto::all();
-        return view('admin.productos.index', compact('productos'));
+        return view('Admin.Productos.index', compact('productos'));
     }
 
     // Mostrar formulario de creación
     public function crear()
     {
-        return view('admin.productos.crear');
+        return view('Admin.Productos.crear');
     }
 
     // Guardar nuevo producto
@@ -43,7 +43,7 @@ class ProductoController extends Controller
     // Mostrar formulario de edición
     public function editar(Producto $producto)
     {
-        return view('admin.productos.editar', compact('producto'));
+        return view('Admin.Productos.editar', compact('producto'));
     }
 
     // Actualizar producto

@@ -508,21 +508,18 @@ header img {
 
   // Lógica específica para el modal de crear/editar reserva (admin o cliente)
   $(document).on('shown.bs.modal', '#modalAccion', function () {
-  // Detectar si el formulario es de admin o cliente
   var baseUrl = '/cliente/reservas';
   if ($(this).find('form[action*="admin/reservas"]').length > 0) {
     baseUrl = '/admin/reservas';
   }
 
-  // Elementos del formulario
-  const userSelect = document.getElementById('user_id');      // Solo existe en admin
+  const userSelect = document.getElementById('user_id');
   const actividadSelect = document.getElementById('actividad');
   const fechaInput = document.getElementById('fecha');
   const huecoSelect = document.getElementById('hueco');
 
   if (!actividadSelect || !fechaInput || !huecoSelect) return;
 
-  // Obtener token CSRF de la cookie (opcional pero recomendado)
   function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -530,11 +527,10 @@ header img {
   }
   const csrfToken = getCookie('XSRF-TOKEN');
 
-  // Funciones para resetear campos dependientes
   function resetActividad() {
     if (actividadSelect) {
       actividadSelect.value = '';
-      actividadSelect.disabled = !!userSelect; // Si es admin, deshabilitar actividad hasta que elija cliente
+      actividadSelect.disabled = !!userSelect;
     }
     resetFecha();
   }
@@ -555,9 +551,8 @@ header img {
     }
   }
 
-  // Si existe userSelect (admin), habilitar actividad solo al seleccionar cliente
   if (userSelect) {
-    resetActividad(); // Actividad deshabilitada inicialmente
+    resetActividad();
     userSelect.addEventListener('change', function() {
       if (actividadSelect) {
         actividadSelect.value = '';
@@ -566,13 +561,11 @@ header img {
       resetFecha();
     });
   } else {
-    // Para cliente, actividad siempre habilitada
     if (actividadSelect) {
       actividadSelect.disabled = false;
     }
   }
 
-  // Al cambiar actividad, cargar días disponibles y habilitar fecha
   actividadSelect.addEventListener('change', function() {
     resetFecha();
     if (this.value) {
@@ -605,7 +598,6 @@ header img {
     }
   });
 
-  // Al seleccionar fecha, cargar huecos disponibles
   $(fechaInput).off('changeDate.modalReserva').on('changeDate.modalReserva', function(e) {
     resetHueco();
     const actividadId = actividadSelect ? actividadSelect.value : null;
@@ -635,13 +627,11 @@ header img {
   });
 
   // --- Inicialización para edición ---
-  // Si hay valores iniciales (edición), precargar días y huecos
   const actividadInicial = actividadSelect.value;
   const fechaInicial = fechaInput.value;
   const huecoInicial = huecoSelect.value;
 
   if (actividadInicial) {
-    // Cargar días disponibles y setear el datepicker con la fecha actual
     $.ajax({
       url: `${baseUrl}/dias-disponibles`,
       method: 'GET',
@@ -664,7 +654,6 @@ header img {
         fechaInput.disabled = false;
         if (fechaInicial) {
           $(fechaInput).datepicker('setDate', fechaInicial);
-          // Cargar huecos disponibles para la fecha y actividad actual
           $.ajax({
             url: `${baseUrl}/huecos-disponibles`,
             method: 'GET',
@@ -686,59 +675,8 @@ header img {
     });
   }
 
-  // Inicializamos todo (solo si no es edición)
   if (!actividadInicial) {
     resetActividad();
-  }
-});
-
-// Envío AJAX para crear/editar reserva (admin o cliente)
-$(document).on('submit', 'form[action*="reservas"]', function(e) {
-  var form = this;
-  if ($(form).closest('#modalAccion').length > 0) {
-    e.preventDefault();
-    // Habilita user_id si está deshabilitado para que se envíe
-    var userIdInput = $(form).find('[name="user_id"]:disabled');
-    userIdInput.prop('disabled', false);
-
-    var formData = new FormData(form);
-    var action = $(form).attr('action');
-    var method = $(form).find('input[name="_method"]').val() || $(form).attr('method') || 'POST';
-    $.ajax({
-      url: action,
-      type: method,
-      data: formData,
-      processData: false,
-      contentType: false,
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      success: function(resp) {
-        if (resp.success && resp.tbody) {
-          $('#modalAccion').modal('hide');
-          // Recargar solo el tbody de la tabla de reservas
-          var $tbody = $("#tablaReservasAdmin tbody");
-          if ($tbody.length) {
-            $tbody.html(resp.tbody);
-          } else {
-            $("table.table-reservas-admin tbody").html(resp.tbody);
-          }
-          // Opcional: mostrar mensaje de éxito
-          if (resp.message) {
-            $('<div class="alert alert-success mt-3">'+resp.message+'</div>').insertBefore('table.table-reservas-admin').delay(2500).fadeOut(500, function(){$(this).remove();});
-          }
-        } else if (resp.error) {
-          alert(resp.error);
-        }
-      },
-      error: function(xhr) {
-        if (xhr.status === 422 && xhr.responseText) {
-          $('#modalAccion .modal-body').html(xhr.responseText);
-        } else {
-          alert('Error al procesar la reserva.');
-        }
-      }
-    });
-    // Vuelve a deshabilitar el campo si era necesario
-    userIdInput.prop('disabled', true);
   }
 });
         // Actualiza el contador del carrito en el header

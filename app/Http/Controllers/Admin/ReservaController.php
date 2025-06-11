@@ -68,27 +68,33 @@ class ReservaController extends Controller
 
     // Guarda una nueva reserva
     public function store(Request $request)
-    {
-        // Validación básica (ajusta según tus necesidades)
-        $validated = $request->validate([
-            'cita_id' => 'required|exists:citas,id',
-            'user_id' => 'required|exists:users,id',
-            // ...otros campos necesarios...
-        ]);
-        $reserva = Reserva::create($validated);
-        // Aquí puedes añadir lógica para crear el evento en Google Calendar
+{
+    $validated = $request->validate([
+        'cita_id' => 'required|exists:citas,id',
+        'user_id' => 'required|exists:users,id',
+    ]);
 
-        if ($request->ajax()) {
-            $reservas = Reserva::with(['cita', 'cliente'])->orderByDesc('created_at')->get();
-            $tbody = view('Admin.Reservas.partials.tbody', compact('reservas'))->render();
-            return response()->json([
-                'success' => true,
-                'message' => 'Reserva creada correctamente',
-                'tbody' => $tbody
-            ]);
-        }
-        return redirect()->route('admin.reservas.listar')->with('success', 'Reserva creada correctamente');
+    // Opcional: Validar aforo para que no se sobrepase
+    $cita = \App\Models\Cita::find($validated['cita_id']);
+    $numReservas = \App\Models\Reserva::where('cita_id', $cita->id)->count();
+    if ($numReservas >= $cita->aforo) {
+        return back()->withErrors(['cita_id' => 'No quedan plazas disponibles para esta cita'])->withInput();
     }
+
+    $reserva = \App\Models\Reserva::create($validated);
+
+    if ($request->ajax()) {
+        $reservas = \App\Models\Reserva::with(['cita', 'cliente'])->orderByDesc('created_at')->get();
+        $tbody = view('Admin.Reservas.partials.tbody', compact('reservas'))->render();
+        return response()->json([
+            'success' => true,
+            'message' => 'Reserva creada correctamente',
+            'tbody' => $tbody
+        ]);
+    }
+
+    return redirect()->route('admin.reservas.listar')->with('success', 'Reserva creada correctamente');
+}
 
     // Muestra el formulario de edición de reserva
     public function edit($id)

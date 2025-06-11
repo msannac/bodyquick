@@ -86,7 +86,7 @@ Route::middleware([
          Route::delete('admin/clientes/{cliente}', [App\Http\Controllers\Admin\UserController::class, 'eliminar'])->name('admin.clientes.eliminar');
 
          // Rutas para el CRUD de reservas (admin)
-         Route::prefix('admin/reservas')->group(function () {
+         //Route::prefix('admin/reservas')->group(function () {
              Route::get('/', [App\Http\Controllers\Admin\ReservaController::class, 'index'])->name('admin.reservas.listar');
              Route::get('/crear', [App\Http\Controllers\Admin\ReservaController::class, 'create'])->name('admin.reservas.crear');
              Route::post('/', [App\Http\Controllers\Admin\ReservaController::class, 'store'])->name('admin.reservas.almacenar');
@@ -97,7 +97,7 @@ Route::middleware([
              // AJAX
              Route::get('/dias-disponibles', [App\Http\Controllers\Admin\ReservaController::class, 'diasDisponibles'])->name('admin.reservas.diasDisponibles');
              Route::get('/huecos-disponibles', [App\Http\Controllers\Admin\ReservaController::class, 'huecosDisponibles'])->name('admin.reservas.huecosDisponibles');
-         });
+        // });
          //Route::get('admin/reservas', [App\Http\Controllers\Admin\ReservaController::class, 'index'])->name('admin.reservas.listar');
          //Route::get('admin/reservas/crear', [App\Http\Controllers\Admin\ReservaController::class, 'create'])->name('admin.reservas.crear');
          //Route::post('admin/reservas', [App\Http\Controllers\Admin\ReservaController::class, 'store'])->name('admin.reservas.almacenar');

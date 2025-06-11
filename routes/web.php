@@ -16,7 +16,8 @@ use Illuminate\Http\Request;
 use Spatie\GoogleCalendar\Event;
 use App\Http\Controllers\LandingController;
 
-Route::get('/', [LandingController::class, 'index']);
+//Route::get('/', [LandingController::class, 'index']);
+Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 // Rutas de verificación de email (Laravel)
 Route::get('/email/verify', function () {
@@ -188,7 +189,8 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\AdminMiddleware
 
 Route::post('/logout', function () {
     Auth::logout();
-    return redirect('/');
+    return redirect()->route('landing');
+    //return redirect('/');
 })->name('logout');
 
 Route::get('/test-google-calendar', function () {

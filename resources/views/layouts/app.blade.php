@@ -277,6 +277,10 @@ header img {
         </div>
       </div>
     </div>
+    <!-- Base URL global para reservas -->
+    <script>
+      window.BASE_URL_RESERVAS = "{{ url(request()->is('admin/*') ? '/admin/reservas' : '/cliente/reservas') }}";
+    </script>
     <!-- Scripts: jQuery, jQuery UI y Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
@@ -522,8 +526,8 @@ header img {
   const csrfToken = getCookie('XSRF-TOKEN');
 
   // Detectar base URL según el path actual (admin o cliente)
-  const baseUrl = window.location.pathname.startsWith('/admin') ? '/admin/reservas' : '/cliente/reservas';
-
+  //const baseUrl = window.location.pathname.startsWith('/admin') ? '/admin/reservas' : '/cliente/reservas';
+  const baseUrl = window.BASE_URL_RESERVAS;
   // Funciones para resetear campos dependientes
   function resetActividad() {
     if (actividadSelect) {

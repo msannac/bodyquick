@@ -179,7 +179,6 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\AdminMiddleware
 
 Route::post('/logout', function () {
     Auth::logout();
-    dd('Logout hecho, redirigiendo a /');
     return redirect('/');
 })->name('logout');
 

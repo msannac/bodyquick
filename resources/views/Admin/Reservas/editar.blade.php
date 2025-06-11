@@ -50,6 +50,7 @@
         </select>
       </div>
     </div>
+    <input type="hidden" name="cita_id" value="{{ $citaActual ? $citaActual->id : '' }}">
     <div class="form-group text-right mt-2">
       <button type="submit" class="btn btn-success btn-accion-modal">
         <i class="fas fa-check"></i> Actualizar Reserva

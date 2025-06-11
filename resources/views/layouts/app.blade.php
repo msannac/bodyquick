@@ -695,9 +695,12 @@ header img {
 // Envío AJAX para crear/editar reserva (admin o cliente)
 $(document).on('submit', 'form[action*="reservas"]', function(e) {
   var form = this;
-  // Solo AJAX si el formulario está en el modal
   if ($(form).closest('#modalAccion').length > 0) {
     e.preventDefault();
+    // Habilita user_id si está deshabilitado para que se envíe
+    var userIdInput = $(form).find('[name="user_id"]:disabled');
+    userIdInput.prop('disabled', false);
+
     var formData = new FormData(form);
     var action = $(form).attr('action');
     var method = $(form).find('input[name="_method"]').val() || $(form).attr('method') || 'POST';
@@ -734,6 +737,8 @@ $(document).on('submit', 'form[action*="reservas"]', function(e) {
         }
       }
     });
+    // Vuelve a deshabilitar el campo si era necesario
+    userIdInput.prop('disabled', true);
   }
 });
         // Actualiza el contador del carrito en el header

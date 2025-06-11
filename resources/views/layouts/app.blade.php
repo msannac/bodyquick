@@ -506,8 +506,14 @@ header img {
           $('#fecha').off('changeDate');
         });
 
-        // Lógica específica para el modal de crear reserva admin
-        $(document).on('shown.bs.modal', '#modalAccion', function () {
+  // Lógica específica para el modal de crear reserva (admin o cliente)
+  $(document).on('shown.bs.modal', '#modalAccion', function () {
+  // Detectar si el formulario es de admin o cliente
+  var baseUrl = '/cliente/reservas';
+  if ($(this).find('form[action*="admin/reservas"]').length > 0) {
+    baseUrl = '/admin/reservas';
+  }
+
   // Elementos del formulario
   const userSelect = document.getElementById('user_id');      // Solo existe en admin
   const actividadSelect = document.getElementById('actividad');
@@ -525,9 +531,6 @@ header img {
   }
   const csrfToken = getCookie('XSRF-TOKEN');
 
-  // Detectar base URL según el path actual (admin o cliente)
-  //const baseUrl = window.location.pathname.startsWith('/admin') ? '/admin/reservas' : '/cliente/reservas';
-  const baseUrl = window.BASE_URL_RESERVAS;
   // Funciones para resetear campos dependientes
   function resetActividad() {
     if (actividadSelect) {

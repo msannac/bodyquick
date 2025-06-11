@@ -136,7 +136,7 @@ Route::middleware(['auth:sanctum', ClienteMiddleware::class])->group(function ()
     Route::delete('/cliente/reservas/{reserva}', [ReservaController::class, 'destroy'])->name('cliente.reservas.eliminar');
     Route::get('cliente/reservas/dias-disponibles', [ReservaController::class, 'diasDisponibles'])->name('cliente.reservas.diasDisponibles');
     Route::get('cliente/reservas/huecos-disponibles', [ReservaController::class, 'huecosDisponibles'])->name('cliente.reservas.huecosDisponibles');
-    //Route::post('cliente/reservas/almacenar', [ReservaController::class, 'store'])->name('cliente.reservas.almacenar');
+    Route::post('cliente/reservas/almacenar', [ReservaController::class, 'store'])->name('cliente.reservas.almacenar');
 
     Route::get('/cliente/perfil/editar', [ClientePerfilController::class, 'edit'])
          ->name('cliente.perfil.editar');

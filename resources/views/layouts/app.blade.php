@@ -285,7 +285,7 @@ header img {
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
     <script>
     $(document).ready(function(){
       // Configurar el token CSRF para todas las peticiones AJAX
@@ -584,8 +584,6 @@ header img {
             startDate: new Date(),
             autoclose: true,
             todayHighlight: true,
-            language: 'es',
-            weekStart: 1, // La semana empieza en lunes
             beforeShowDay: function(date) {
               const ymd = date.toISOString().slice(0,10);
               return dias.includes(ymd) ? {enabled: true} : false;
@@ -648,8 +646,6 @@ header img {
           startDate: new Date(),
           autoclose: true,
           todayHighlight: true,
-          language: 'es',
-          weekStart: 1, // La semana empieza en lunes
           beforeShowDay: function(date) {
             const ymd = date.toISOString().slice(0,10);
             return dias.includes(ymd) ? {enabled: true} : false;

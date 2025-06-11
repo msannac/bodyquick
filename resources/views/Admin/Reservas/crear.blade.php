@@ -28,7 +28,7 @@
       </div>
       <div class="form-group">
         <label for="actividad"><i class="fas fa-dumbbell icono-label"></i> Actividad</label>
-        <select name="actividad" id="actividad" class="form-control" required disabled>
+        <select name="actividad" id="actividad" class="form-control" required>
           <option value="">Selecciona una actividad</option>
           @foreach($actividades as $actividad)
             <option value="{{ $actividad->id }}">{{ $actividad->nombre }}</option>

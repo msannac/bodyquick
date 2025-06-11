@@ -32,7 +32,7 @@ class VerifyEmailController extends Controller
         if ($request->user()->is_admin) {
             return redirect('/admin/dashboard')->with('status', 'Correo verificado correctamente.');
         } else {
-            return redirect('/cliente/reservas')->with('status', 'Correo verificado correctamente.');
+            return redirect('/')->with('status', 'Correo verificado correctamente.');
         }
     }
 }

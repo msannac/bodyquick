@@ -60,7 +60,7 @@ class ReservaController extends Controller
         //]);
     //}
        
-        $citas = \App\Models\Cita::with('actividad')->orderBy('fecha')->get();
+        $citas = \App\Models\Cita::with('actividad')->orderBy('fecha')->paginate(20);
          return response()->json($citas);
 
         //$clientes = \App\Models\User::orderBy('name')->get();

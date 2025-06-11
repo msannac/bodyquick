@@ -155,6 +155,11 @@ class ReservaController extends Controller
             ->whereBetween('fecha', [$hoy, $limite])
             ->pluck('fecha')
             ->unique()
+            ->filter(function ($fecha) {
+                $carbon = \Carbon\Carbon::parse($fecha);
+                // 0 = domingo, 6 = sábado
+                return $carbon->dayOfWeek !== 0 && $carbon->dayOfWeek !== 6;
+            })
             ->values();
         return response()->json($dias);
     }

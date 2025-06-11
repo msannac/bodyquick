@@ -504,17 +504,16 @@ header img {
 
         // Lógica específica para el modal de crear reserva admin
         $(document).on('shown.bs.modal', '#modalAccion', function () {
-  const userSelect = document.getElementById('user_id');
+  // Elementos del formulario
+  const userSelect = document.getElementById('user_id');      // Solo existe en admin
   const actividadSelect = document.getElementById('actividad');
   const fechaInput = document.getElementById('fecha');
   const huecoSelect = document.getElementById('hueco');
 
-  if (!userSelect || !actividadSelect || !fechaInput || !huecoSelect) return;
+  // Si no hay actividad o fecha, no seguimos (mínimo cliente tiene actividad y fecha)
+  if (!actividadSelect || !fechaInput) return;
 
-  // Detectar base URL según el path actual (admin o cliente)
-  const baseUrl = window.location.pathname.startsWith('/admin') ? '/admin/reservas' : '/cliente/reservas';
-
-  // Obtener token CSRF de la cookie (opcional, pero recomendable)
+  // Obtener token CSRF de la cookie (opcional pero recomendado)
   function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -522,84 +521,100 @@ header img {
   }
   const csrfToken = getCookie('XSRF-TOKEN');
 
+  // Detectar base URL según el path actual (admin o cliente)
+  const baseUrl = window.location.pathname.startsWith('/admin') ? '/admin/reservas' : '/cliente/reservas';
+
   // Funciones para resetear campos dependientes
   function resetActividad() {
-    actividadSelect.value = '';
-    actividadSelect.disabled = true;
+    if (actividadSelect) {
+      actividadSelect.value = '';
+      actividadSelect.disabled = !!userSelect;  // Si es admin, deshabilitar actividad hasta que elija cliente
+    }
     resetFecha();
   }
   function resetFecha() {
-    fechaInput.value = '';
-    fechaInput.disabled = true;
-    if ($(fechaInput).data('datepicker')) {
-      try { $(fechaInput).datepicker('destroy'); } catch(e){}
+    if (fechaInput) {
+      fechaInput.value = '';
+      fechaInput.disabled = true;
+      if ($(fechaInput).data('datepicker')) {
+        try { $(fechaInput).datepicker('destroy'); } catch(e){}
+      }
     }
     resetHueco();
   }
   function resetHueco() {
-    huecoSelect.innerHTML = '<option value="">Seleccione un hueco</option>';
-    huecoSelect.disabled = true;
+    if (huecoSelect) {
+      huecoSelect.innerHTML = '<option value="">Seleccione un hueco</option>';
+      huecoSelect.disabled = true;
+    }
   }
 
-  // Al cambiar cliente, habilitar actividad
-  userSelect.addEventListener('change', function() {
-    resetActividad();
-    if (this.value) {
+  // Si existe userSelect (admin), habilitar actividad solo al seleccionar cliente
+  if (userSelect) {
+    resetActividad(); // Actividad deshabilitada inicialmente
+    userSelect.addEventListener('change', function() {
+      if (actividadSelect) {
+        actividadSelect.value = '';
+        actividadSelect.disabled = !this.value;
+      }
+      resetFecha();
+    });
+  } else {
+    // Para cliente, actividad siempre habilitada
+    if (actividadSelect) {
       actividadSelect.disabled = false;
     }
-  });
+  }
 
   // Al cambiar actividad, cargar días disponibles y habilitar fecha
-  actividadSelect.addEventListener('change', function() {
-    resetFecha();
-    if (this.value) {
-      fechaInput.disabled = false;
+  if (actividadSelect) {
+    actividadSelect.addEventListener('change', function() {
+      resetFecha();
+      if (this.value) {
+        fechaInput.disabled = false;
 
-      $.ajax({
-        url: `${baseUrl}/dias-disponibles`,
-        method: 'GET',
-        data: { actividad_id: this.value },
-        headers: {
-          'X-CSRF-TOKEN': csrfToken || ''
-        },
-        success: function(dias) {
-          if ($(fechaInput).data('datepicker')) {
-            try { $(fechaInput).datepicker('destroy'); } catch(e){}
-          }
-          $(fechaInput).datepicker({
-            format: 'yyyy-mm-dd',
-            startDate: new Date(),
-            autoclose: true,
-            todayHighlight: true,
-            beforeShowDay: function(date) {
-              const ymd = date.toISOString().slice(0,10);
-              return dias.includes(ymd) ? {enabled: true} : false;
+        $.ajax({
+          url: `${baseUrl}/dias-disponibles`,
+          method: 'GET',
+          data: { actividad_id: this.value },
+          headers: { 'X-CSRF-TOKEN': csrfToken || '' },
+          success: function(dias) {
+            if ($(fechaInput).data('datepicker')) {
+              try { $(fechaInput).datepicker('destroy'); } catch(e){}
             }
-          });
-        },
-        error: function(xhr) {
-          console.error('Error cargando días disponibles:', xhr.responseText);
-          alert('No se pudieron cargar los días disponibles. Inténtalo más tarde.');
-        }
-      });
-    }
-  });
+            $(fechaInput).datepicker({
+              format: 'yyyy-mm-dd',
+              startDate: new Date(),
+              autoclose: true,
+              todayHighlight: true,
+              beforeShowDay: function(date) {
+                const ymd = date.toISOString().slice(0,10);
+                return dias.includes(ymd) ? {enabled: true} : false;
+              }
+            });
+          },
+          error: function(xhr) {
+            console.error('Error cargando días disponibles:', xhr.responseText);
+            alert('No se pudieron cargar los días disponibles. Inténtalo más tarde.');
+          }
+        });
+      }
+    });
+  }
 
   // Al seleccionar fecha, cargar huecos disponibles
-  $(fechaInput).off('changeDate.admin').on('changeDate.admin', function(e) {
+  $(fechaInput).off('changeDate.modalReserva').on('changeDate.modalReserva', function(e) {
     resetHueco();
-    const actividadId = actividadSelect.value;
+    const actividadId = actividadSelect ? actividadSelect.value : null;
     const fecha = e.format('yyyy-mm-dd');
     if (actividadId && fecha) {
       $.ajax({
         url: `${baseUrl}/huecos-disponibles`,
         method: 'GET',
         data: { actividad_id: actividadId, fecha: fecha },
-        headers: {
-          'X-CSRF-TOKEN': csrfToken || ''
-        },
+        headers: { 'X-CSRF-TOKEN': csrfToken || '' },
         success: function(huecos) {
-          if (Array.isArray(huecos)) {
+          if (Array.isArray(huecos) && huecoSelect) {
             huecos.forEach(function(hueco) {
               const texto = hueco.hora_inicio + ' - ' + hueco.hora_fin;
               huecoSelect.append('<option value="'+hueco.id+'">'+texto+'</option>');
@@ -615,7 +630,7 @@ header img {
     }
   });
 
-  // Al abrir el modal, resetear todo
+  // Inicializamos todo
   resetActividad();
 });
 

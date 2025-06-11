@@ -39,6 +39,12 @@
       </button>
     </div>
   </form>
+  </form>
+
+<script>
+    const BASE_URL_RESERVAS = "{{ url(request()->is('admin/*') ? '/admin/reservas' : '/cliente/reservas') }}";
+</script>
+
 </div>
 <style>
   .actividad-modal-wrapper {

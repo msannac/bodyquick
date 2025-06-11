@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Spatie\GoogleCalendar\Event;
 use App\Http\Controllers\LandingController;
 
+
 //Route::get('/', [LandingController::class, 'index']);
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 
@@ -187,8 +188,15 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\AdminMiddleware
     Route::delete('/entrenadores/{entrenador}', [\App\Http\Controllers\Admin\EntrenadorController::class, 'eliminar'])->name('admin.entrenadores.eliminar');
 });
 
-Route::post('/logout', function () {
+//Route::post('/logout', function () {
+    Route::post('/logout', function (Request $request) {
     Auth::logout();
+    // Invalidar la sesión completamente
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    // Ahora ya puede ir sin problemas a tu landing
+
     return redirect()->route('landing');
     //return redirect('/');
 })->name('logout');

@@ -1,8 +1,8 @@
-@extends('layouts.app')
 
-@section('title', 'Dashboard Admin')
 
-@section('content')
+<?php $__env->startSection('title', 'Dashboard Admin'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid">
   <div class="row">
     <!-- Sidebar -->
@@ -11,28 +11,28 @@
         <i class="fas fa-user-shield" style="margin-right: 10px; font-size: 28px;"></i> Administrador
       </div>
       <div class="menu">
-        <a href="{{ route('admin.dashboard') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
+        <a href="<?php echo e(route('admin.dashboard')); ?>" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
           Home
         </a>
-        <a href="{{ route('admin.estadisticas') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
+        <a href="<?php echo e(route('admin.estadisticas')); ?>" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
           Estadísticas
         </a>
-        <a href="{{ route('admin.actividades.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
+        <a href="<?php echo e(route('admin.actividades.listar')); ?>" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
           Listar Actividades
         </a>
-        <a href="{{ route('admin.clientes.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
+        <a href="<?php echo e(route('admin.clientes.listar')); ?>" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
           Listar Clientes
         </a>
-       <a href="{{ route('admin.citas.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
+       <a href="<?php echo e(route('admin.citas.listar')); ?>" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
           Listar Citas
         </a>
-        <a href="{{ route('admin.entrenadores.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
+        <a href="<?php echo e(route('admin.entrenadores.listar')); ?>" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
           Listar Entrenadores
         </a>
-         <a href="{{ route('admin.reservas.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
+         <a href="<?php echo e(route('admin.reservas.listar')); ?>" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
           Listar Reservas
         </a>
-        <a href="{{ route('admin.productos.listar') }}" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
+        <a href="<?php echo e(route('admin.productos.listar')); ?>" style="display: block; padding: 10px 15px; margin-bottom: 10px; background-color: rgb(254,171,3); color: #fff; text-decoration: none; border-radius: 5px;">
           Listar Productos
         </a>
       </div>
@@ -58,35 +58,35 @@
             <div class="mb-4 p-3 shadow-sm rounded bg-white border sector-dashboard">
               <h3><i class="fa-solid fa-users"></i> Entrenadores Destacados</h3>
               <div class="row">
-                {{-- Primeros 3 entrenadores en la primera fila --}}
-                @foreach($entrenadores->slice(0, 3) as $entrenador)
+                
+                <?php $__currentLoopData = $entrenadores->slice(0, 3); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $entrenador): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                   <div class="col-4 mb-4 d-flex flex-column align-items-center">
-                    <img src="{{ $entrenador->profile_photo_path ? asset('storage/' . $entrenador->profile_photo_path) : asset('images/default-trainer.png') }}" alt="Foto de {{ $entrenador->nombre }}" class="rounded-circle mb-2" style="width:60px;height:60px;object-fit:cover;">
+                    <img src="<?php echo e($entrenador->profile_photo_path ? asset('storage/' . $entrenador->profile_photo_path) : asset('images/default-trainer.png')); ?>" alt="Foto de <?php echo e($entrenador->nombre); ?>" class="rounded-circle mb-2" style="width:60px;height:60px;object-fit:cover;">
                     <div class="text-center">
-                      <strong>{{ $entrenador->nombre }}</strong><br>
-                      <span class="text-muted" style="font-size:13px;">{{ $entrenador->especialidad }}</span>
+                      <strong><?php echo e($entrenador->nombre); ?></strong><br>
+                      <span class="text-muted" style="font-size:13px;"><?php echo e($entrenador->especialidad); ?></span>
                     </div>
                   </div>
-                @endforeach
-                {{-- Siguientes 3 entrenadores en la segunda fila --}}
-                @foreach($entrenadores->slice(3, 3) as $entrenador)
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                
+                <?php $__currentLoopData = $entrenadores->slice(3, 3); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $entrenador): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                   <div class="col-4 mb-4 d-flex flex-column align-items-center">
-                    <img src="{{ $entrenador->profile_photo_path ? asset('storage/' . $entrenador->profile_photo_path) : asset('images/default-trainer.png') }}" alt="Foto de {{ $entrenador->nombre }}" class="rounded-circle mb-2" style="width:60px;height:60px;object-fit:cover;">
+                    <img src="<?php echo e($entrenador->profile_photo_path ? asset('storage/' . $entrenador->profile_photo_path) : asset('images/default-trainer.png')); ?>" alt="Foto de <?php echo e($entrenador->nombre); ?>" class="rounded-circle mb-2" style="width:60px;height:60px;object-fit:cover;">
                     <div class="text-center">
-                      <strong>{{ $entrenador->nombre }}</strong><br>
-                      <span class="text-muted" style="font-size:13px;">{{ $entrenador->especialidad }}</span>
+                      <strong><?php echo e($entrenador->nombre); ?></strong><br>
+                      <span class="text-muted" style="font-size:13px;"><?php echo e($entrenador->especialidad); ?></span>
                     </div>
                   </div>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
               </div>
             </div>
             <div style="height:40px;"></div> <!-- Espacio extra entre sectores -->
             <div class="p-3 shadow-sm rounded bg-white border sector-dashboard" style="height: 50%">
               <h3><i class="fa-solid fa-list"></i> Actividades Activas</h3>
               <ul>
-                @foreach($actividadesActivas as $actividad)
-                  <li>{{ $actividad->nombre }}</li>
-                @endforeach
+                <?php $__currentLoopData = $actividadesActivas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $actividad): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                  <li><?php echo e($actividad->nombre); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
               </ul>
             </div>
           </div>
@@ -95,15 +95,15 @@
     </div><!-- fin col-md-10 -->
   </div><!-- fin row -->
 </div><!-- fin container-fluid -->
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <!-- Se incluye Chart.js solamente para esta vista -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   // --- Gráfico de Clientes por semana ---
   // Convierte los datos de clientes por semana enviados desde PHP a un objeto JS
-  var clientesData = JSON.parse('{!! json_encode($clientesPorSemana ?? []) !!}');
+  var clientesData = JSON.parse('<?php echo json_encode($clientesPorSemana ?? []); ?>');
   // Obtiene el contexto del canvas donde se dibujará el gráfico de clientes
   var ctxClientes = document.getElementById('clientesChart').getContext('2d');
   // Crea un nuevo gráfico de barras con Chart.js para mostrar clientes por semana
@@ -143,7 +143,7 @@
 
   // --- Gráfico de Reservas por semana ---
   // Convierte los datos de reservas por semana enviados desde PHP a un objeto JS
-  var reservasData = JSON.parse('{!! json_encode($reservasPorSemana ?? []) !!}');
+  var reservasData = JSON.parse('<?php echo json_encode($reservasPorSemana ?? []); ?>');
   // Obtiene el contexto del canvas donde se dibujará el gráfico de reservas
   var ctxReservas = document.getElementById('reservasChart').getContext('2d');
   // Crea un nuevo gráfico de barras con Chart.js para mostrar reservas por semana
@@ -181,7 +181,7 @@
     }
   });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
 <style>
   .sector-dashboard {
@@ -230,3 +230,4 @@
     }
   }
 </style>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\bodyquick\resources\views/Admin/estadisticasAdmin.blade.php ENDPATH**/ ?>

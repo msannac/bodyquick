@@ -278,6 +278,10 @@ header img {
         </div>
       </div>
     </div>
+    <!-- Base URL global para reservas -->
+    <script>
+      window.BASE_URL_RESERVAS = "<?php echo e(url(request()->is('admin/*') ? '/admin/reservas' : '/cliente/reservas')); ?>";
+    </script>
     <!-- Scripts: jQuery, jQuery UI y Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
@@ -285,6 +289,12 @@ header img {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
     <script>
     $(document).ready(function(){
+      // Configurar el token CSRF para todas las peticiones AJAX
+    $.ajaxSetup({
+      headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+      }
+    });
       $('#btnFaq').on('click', function(e){
         e.preventDefault();
         var url = $(this).data('url');
@@ -301,6 +311,12 @@ header img {
     </script>
     <script>
       $(document).ready(function(){
+        // Configurar el token CSRF para todas las peticiones AJAX
+    $.ajaxSetup({
+      headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+      }
+    });
         // Abrir cualquier modal AJAX with the class .abrirModal
         $(document).off('click', '.abrirModal').on('click', '.abrirModal', function(e) {
           e.preventDefault();
@@ -491,255 +507,179 @@ header img {
           $('#fecha').off('changeDate');
         });
 
-        // Lógica específica para el modal de crear reserva admin
-        $(document).on('shown.bs.modal', '#modalAccion', function () {
-          const userSelect = document.getElementById('user_id');
-          const actividadSelect = document.getElementById('actividad');
-          const fechaInput = document.getElementById('fecha');
-          const huecoSelect = document.getElementById('hueco');
+  // Lógica específica para el modal de crear/editar reserva (admin o cliente)
+  $(document).on('shown.bs.modal', '#modalAccion', function () {
+  var baseUrl = '/cliente/reservas';
+  if ($(this).find('form[action*="admin/reservas"]').length > 0) {
+    baseUrl = '/admin/reservas';
+  }
 
-          if (!userSelect || !actividadSelect || !fechaInput || !huecoSelect) return;
+  const userSelect = document.getElementById('user_id');
+  const actividadSelect = document.getElementById('actividad');
+  const fechaInput = document.getElementById('fecha');
+  const huecoSelect = document.getElementById('hueco');
 
-          // Reset y deshabilitar campos dependientes
-          function resetActividad() {
-            actividadSelect.value = '';
-            actividadSelect.disabled = true;
-            resetFecha();
+  if (!actividadSelect || !fechaInput || !huecoSelect) return;
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+  const csrfToken = getCookie('XSRF-TOKEN');
+
+  function resetActividad() {
+    if (actividadSelect) {
+      actividadSelect.value = '';
+      actividadSelect.disabled = !!userSelect;
+    }
+    resetFecha();
+  }
+  function resetFecha() {
+    if (fechaInput) {
+      fechaInput.value = '';
+      fechaInput.disabled = true;
+      if ($(fechaInput).data('datepicker')) {
+        try { $(fechaInput).datepicker('destroy'); } catch(e){}
+      }
+    }
+    resetHueco();
+  }
+  function resetHueco() {
+    if (huecoSelect) {
+      huecoSelect.innerHTML = '<option value="">Seleccione un hueco</option>';
+      huecoSelect.disabled = true;
+    }
+  }
+
+  if (userSelect) {
+    resetActividad();
+    userSelect.addEventListener('change', function() {
+      if (actividadSelect) {
+        actividadSelect.value = '';
+        actividadSelect.disabled = !this.value;
+      }
+      resetFecha();
+    });
+  } else {
+    if (actividadSelect) {
+      actividadSelect.disabled = false;
+    }
+  }
+
+  actividadSelect.addEventListener('change', function() {
+    resetFecha();
+    if (this.value) {
+      fechaInput.disabled = false;
+      $.ajax({
+        url: `${baseUrl}/dias-disponibles`,
+        method: 'GET',
+        data: { actividad_id: this.value },
+        headers: { 'X-CSRF-TOKEN': csrfToken || '' },
+        success: function(dias) {
+          if ($(fechaInput).data('datepicker')) {
+            try { $(fechaInput).datepicker('destroy'); } catch(e){}
           }
-          function resetFecha() {
-            fechaInput.value = '';
-            fechaInput.disabled = true;
-            if ($(fechaInput).data('datepicker')) {
-              try { $(fechaInput).datepicker('destroy'); } catch(e){}
+          $(fechaInput).datepicker({
+            format: 'yyyy-mm-dd',
+            startDate: new Date(),
+            autoclose: true,
+            todayHighlight: true,
+            beforeShowDay: function(date) {
+              const ymd = date.toISOString().slice(0,10);
+              return dias.includes(ymd) ? {enabled: true} : false;
             }
-            resetHueco();
-          }
-          function resetHueco() {
+          });
+        },
+        error: function(xhr) {
+          console.error('Error cargando días disponibles:', xhr.responseText);
+          alert('No se pudieron cargar los días disponibles. Inténtalo más tarde.');
+        }
+      });
+    }
+  });
+
+  $(fechaInput).off('changeDate.modalReserva').on('changeDate.modalReserva', function(e) {
+    resetHueco();
+    const actividadId = actividadSelect ? actividadSelect.value : null;
+    const fecha = e.format('yyyy-mm-dd');
+    if (actividadId && fecha) {
+      $.ajax({
+        url: `${baseUrl}/huecos-disponibles`,
+        method: 'GET',
+        data: { actividad_id: actividadId, fecha: fecha },
+        headers: { 'X-CSRF-TOKEN': csrfToken || '' },
+        success: function(huecos) {
+          if (Array.isArray(huecos) && huecoSelect) {
             huecoSelect.innerHTML = '<option value="">Seleccione un hueco</option>';
-            huecoSelect.disabled = true;
-          }
-
-          // Al cambiar cliente, habilitar actividad
-          userSelect.addEventListener('change', function() {
-            resetActividad();
-            if (this.value) {
-              actividadSelect.disabled = false;
-            }
-          });
-
-          // Al cambiar actividad, cargar días disponibles y habilitar fecha
-          actividadSelect.addEventListener('change', function() {
-            resetFecha();
-            if (this.value) {
-              fechaInput.disabled = false;
-              // Cargar días disponibles vía AJAX
-              $.get('/admin/reservas/dias-disponibles', {actividad_id: this.value}, function(dias) {
-                if ($(fechaInput).data('datepicker')) {
-                  try { $(fechaInput).datepicker('destroy'); } catch(e){}
-                }
-                $(fechaInput).datepicker({
-                  format: 'yyyy-mm-dd',
-                  startDate: new Date(),
-                  autoclose: true,
-                  todayHighlight: true,
-                  beforeShowDay: function(date) {
-                    const ymd = date.toISOString().slice(0,10);
-                    return dias.includes(ymd) ? {enabled: true} : false;
-                  }
-                });
-              });
-            }
-          });
-
-          // Al seleccionar fecha, cargar huecos disponibles
-          $(fechaInput).off('changeDate.admin').on('changeDate.admin', function(e) {
-            resetHueco();
-            const actividadId = actividadSelect.value;
-            const fecha = e.format('yyyy-mm-dd');
-            if (actividadId && fecha) {
-              $.get('/admin/reservas/huecos-disponibles', {actividad_id: actividadId, fecha: fecha}, function(huecos) {
-                if (Array.isArray(huecos)) {
-                  huecos.forEach(function(hueco) {
-                    huecoSelect.append('<option value="'+hueco+'">'+hueco+'</option>');
-                  });
-                  huecoSelect.disabled = false;
-                }
-              });
-            }
-          });
-
-          // Al abrir el modal, resetear todo
-          resetActividad();
-        });
-
-        // Lógica específica para el modal de editar reserva admin
-        $(document).on('shown.bs.modal', '#modalAccion', function () {
-          const userSelect = document.getElementById('user_id');
-          const actividadSelect = document.getElementById('actividad');
-          const fechaInput = document.getElementById('fecha');
-          const huecoSelect = document.getElementById('hueco');
-
-          if (!userSelect || !actividadSelect || !fechaInput || !huecoSelect) return;
-
-          // --- EDICIÓN: Preselección y carga dinámica ---
-          // Si hay valor en actividad y fecha, cargar días y huecos disponibles
-          const actividadInicial = actividadSelect.value;
-          const fechaInicial = fechaInput.value;
-          const huecoInicial = huecoSelect.value;
-
-          // Reset y deshabilitar campos dependientes
-          function resetActividad() {
-            actividadSelect.value = '';
-            actividadSelect.disabled = true;
-            resetFecha();
-          }
-          function resetFecha() {
-            fechaInput.value = '';
-            fechaInput.disabled = true;
-            if ($(fechaInput).data('datepicker')) {
-              try { $(fechaInput).datepicker('destroy'); } catch(e){}
-            }
-            resetHueco();
-          }
-          function resetHueco() {
-            huecoSelect.innerHTML = '<option value="">Seleccione un hueco</option>';
-            huecoSelect.disabled = true;
-          }
-
-          // Al cambiar cliente, habilitar actividad
-          userSelect.addEventListener('change', function() {
-            resetActividad();
-            if (this.value) {
-              actividadSelect.disabled = false;
-            }
-          });
-
-          // Al cambiar actividad, cargar días disponibles y habilitar fecha
-          actividadSelect.addEventListener('change', function() {
-            resetFecha();
-            if (this.value) {
-              fechaInput.disabled = false;
-              // Cargar días disponibles vía AJAX
-              $.get('/admin/reservas/dias-disponibles', {actividad_id: this.value}, function(dias) {
-                if ($(fechaInput).data('datepicker')) {
-                  try { $(fechaInput).datepicker('destroy'); } catch(e){}
-                }
-                $(fechaInput).datepicker({
-                  format: 'yyyy-mm-dd',
-                  startDate: new Date(),
-                  autoclose: true,
-                  todayHighlight: true,
-                  beforeShowDay: function(date) {
-                    const ymd = date.toISOString().slice(0,10);
-                    return dias.includes(ymd) ? {enabled: true} : false;
-                  }
-                });
-              });
-            }
-          });
-
-          // Al seleccionar fecha, cargar huecos disponibles
-          $(fechaInput).off('changeDate.admin').on('changeDate.admin', function(e) {
-            resetHueco();
-            const actividadId = actividadSelect.value;
-            const fecha = e.format('yyyy-mm-dd');
-            if (actividadId && fecha) {
-              $.get('/admin/reservas/huecos-disponibles', {actividad_id: actividadId, fecha: fecha}, function(huecos) {
-                if (Array.isArray(huecos)) {
-                  huecos.forEach(function(hueco) {
-                    huecoSelect.append('<option value="'+hueco+'">'+hueco+'</option>');
-                  });
-                  huecoSelect.disabled = false;
-                }
-              });
-            }
-          });
-
-          // --- Inicialización para edición ---
-          if (userSelect.value) {
-            actividadSelect.disabled = false;
-          }
-          if (actividadInicial) {
-            // Cargar días disponibles y setear el datepicker con la fecha actual
-            $.get('/admin/reservas/dias-disponibles', {actividad_id: actividadInicial}, function(dias) {
-              if ($(fechaInput).data('datepicker')) {
-                try { $(fechaInput).datepicker('destroy'); } catch(e){}
-              }
-              $(fechaInput).datepicker({
-                format: 'yyyy-mm-dd',
-                startDate: new Date(),
-                autoclose: true,
-                todayHighlight: true,
-                beforeShowDay: function(date) {
-                  const ymd = date.toISOString().slice(0,10);
-                  return dias.includes(ymd) ? {enabled: true} : false;
-                }
-              });
-              fechaInput.disabled = false;
-              if (fechaInicial) {
-                $(fechaInput).datepicker('setDate', fechaInicial);
-                // Cargar huecos disponibles para la fecha y actividad actual
-                $.get('/admin/reservas/huecos-disponibles', {actividad_id: actividadInicial, fecha: fechaInicial}, function(huecos) {
-                  huecoSelect.innerHTML = '<option value="">Seleccione un hueco</option>';
-                  if (Array.isArray(huecos)) {
-                    huecos.forEach(function(hueco) {
-                      const selected = (hueco.id == huecoInicial) ? 'selected' : '';
-                      huecoSelect.innerHTML += `<option value="${hueco.id}" ${selected}>${hueco.hora_inicio} - ${hueco.hora_fin}</option>`;
-                    });
-                    huecoSelect.disabled = false;
-                  }
-                });
-              }
+            huecos.forEach(function(hueco) {
+              const texto = hueco.hora_inicio + ' - ' + hueco.hora_fin;
+              huecoSelect.innerHTML += `<option value="${hueco.id}">${texto}</option>`;
             });
+            huecoSelect.disabled = false;
+          }
+        },
+        error: function(xhr) {
+          console.error('Error cargando huecos disponibles:', xhr.responseText);
+          alert('No se pudieron cargar los huecos disponibles. Inténtalo más tarde.');
+        }
+      });
+    }
+  });
+
+  // --- Inicialización para edición ---
+  const actividadInicial = actividadSelect.value;
+  const fechaInicial = fechaInput.value;
+  const huecoInicial = huecoSelect.value;
+
+  if (actividadInicial) {
+    $.ajax({
+      url: `${baseUrl}/dias-disponibles`,
+      method: 'GET',
+      data: { actividad_id: actividadInicial },
+      headers: { 'X-CSRF-TOKEN': csrfToken || '' },
+      success: function(dias) {
+        if ($(fechaInput).data('datepicker')) {
+          try { $(fechaInput).datepicker('destroy'); } catch(e){}
+        }
+        $(fechaInput).datepicker({
+          format: 'yyyy-mm-dd',
+          startDate: new Date(),
+          autoclose: true,
+          todayHighlight: true,
+          beforeShowDay: function(date) {
+            const ymd = date.toISOString().slice(0,10);
+            return dias.includes(ymd) ? {enabled: true} : false;
           }
         });
-
-        // Envío AJAX para crear/editar reserva admin
-        $(document).on('submit', 'form[action*="admin/reservas"]', function(e) {
-          var form = this;
-          // Solo AJAX si el formulario está en el modal
-          if ($(form).closest('#modalAccion').length > 0) {
-            e.preventDefault();
-            var formData = new FormData(form);
-            var action = $(form).attr('action');
-            var method = $(form).find('input[name="_method"]').val() || $(form).attr('method') || 'POST';
-            $.ajax({
-              url: action,
-              type: method,
-              data: formData,
-              processData: false,
-              contentType: false,
-              headers: { 'X-Requested-With': 'XMLHttpRequest' },
-              success: function(resp) {
-                if (resp.success && resp.tbody) {
-                  $('#modalAccion').modal('hide');
-                  // Recargar solo el tbody de la tabla de reservas
-                  var $tbody = $("#tablaReservasAdmin tbody");
-                  if ($tbody.length) {
-                    $tbody.html(resp.tbody);
-                  } else {
-                    // Si no hay id, buscar por la tabla principal
-                    $("table.table-reservas-admin tbody").html(resp.tbody);
-                  }
-                  // Opcional: mostrar mensaje de éxito
-                  if (resp.message) {
-                    $('<div class="alert alert-success mt-3">'+resp.message+'</div>').insertBefore('table.table-reservas-admin').delay(2500).fadeOut(500, function(){$(this).remove();});
-                  }
-                } else if (resp.error) {
-                  alert(resp.error);
-                }
-              },
-              error: function(xhr) {
-                if (xhr.status === 422 && xhr.responseText) {
-                  $('#modalAccion .modal-body').html(xhr.responseText);
-                } else {
-                  alert('Error al procesar la reserva.');
-                }
+        fechaInput.disabled = false;
+        if (fechaInicial) {
+          $(fechaInput).datepicker('setDate', fechaInicial);
+          $.ajax({
+            url: `${baseUrl}/huecos-disponibles`,
+            method: 'GET',
+            data: { actividad_id: actividadInicial, fecha: fechaInicial },
+            headers: { 'X-CSRF-TOKEN': csrfToken || '' },
+            success: function(huecos) {
+              huecoSelect.innerHTML = '<option value="">Seleccione un hueco</option>';
+              if (Array.isArray(huecos)) {
+                huecos.forEach(function(hueco) {
+                  const selected = (hueco.id == huecoInicial) ? 'selected' : '';
+                  huecoSelect.innerHTML += `<option value="${hueco.id}" ${selected}>${hueco.hora_inicio} - ${hueco.hora_fin}</option>`;
+                });
+                huecoSelect.disabled = false;
               }
-            });
-          }
-        });
+            }
+          });
+        }
+      }
+    });
+  }
 
+  if (!actividadInicial) {
+    resetActividad();
+  }
+});
         // Actualiza el contador del carrito en el header
         window.actualizarContadorCarrito = function() {
             var badge = $("#carrito-badge");

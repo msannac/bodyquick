@@ -586,8 +586,21 @@ header img {
             autoclose: true,
             todayHighlight: true,
             beforeShowDay: function(date) {
-              const ymd = date.toISOString().slice(0,10);
-              return dias.includes(ymd) ? {enabled: true} : false;
+              //const ymd = date.toISOString().slice(0,10);
+              const ymd = date.getFullYear() + '-' + 
+                          String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(date.getDate()).padStart(2, '0');
+
+              const dayOfWeek = date.getDay(); // 0=Domingo, 1=Lunes, ..., 6=Sábado
+              
+              console.log(`Evaluando fecha: ${ymd}, día semana: ${dayOfWeek}, en array: ${dias.includes(ymd)}`);
+  
+              // Solo habilitar si es lunes a viernes (1-5) Y está en los días disponibles
+              const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+              const isAvailable = dias.includes(ymd);
+  
+              return (isWeekday && isAvailable) ? {enabled: true} : false;
+              //return dias.includes(ymd) ? {enabled: true} : false;
             }
           });
         },
@@ -648,8 +661,18 @@ header img {
           autoclose: true,
           todayHighlight: true,
           beforeShowDay: function(date) {
-            const ymd = date.toISOString().slice(0,10);
-            return dias.includes(ymd) ? {enabled: true} : false;
+            const ymd = date.getFullYear() + '-' + 
+                          String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(date.getDate()).padStart(2, '0');
+            const dayOfWeek = date.getDay(); // 0=Domingo, 1=Lunes, ..., 6=Sábado
+            // AÑADIR ESTE LOG ESPECÍFICO QUE FALTA
+  console.log(`Evaluando fecha: ${ymd}, día semana: ${dayOfWeek}, en array: ${dias.includes(ymd)}`);
+            // Solo habilitar si es lunes a viernes (1-5) Y está en los días disponibles
+            const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+          const isAvailable = dias.includes(ymd);
+  
+           return (isWeekday && isAvailable) ? {enabled: true} : false;
+            //return dias.includes(ymd) ? {enabled: true} : false;
           }
         });
         fechaInput.disabled = false;

@@ -230,11 +230,17 @@ class ReservaController extends Controller
         $hoy = now();
         $limite = $hoy->copy()->addDays(30);
 
+        // AÑADIR LOGS TEMPORALES
+    Log::info("Buscando citas entre: {$hoy} y {$limite} para actividad: {$actividad_id}");
+
         $dias = Cita::where('actividad_id', $actividad_id)
             ->whereBetween('fecha', [$hoy, $limite])
+            ->whereRaw('WEEKDAY(fecha) BETWEEN 0 AND 4') // 0=Lunes, 4=Viernes en MySQL
             ->pluck('fecha')
             ->unique()
             ->values(); // Asegura índices consecutivos
+
+             Log::info("Días encontrados:", $dias->toArray());
 
         return response()->json($dias);
     }
